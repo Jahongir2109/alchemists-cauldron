@@ -28,6 +28,24 @@ The task is split into stories, each delivered in its own branch:
 Task description:
 [Alchemist's Cauldron](https://github.com/rolling-scopes-school/qualifying-stage/blob/main/tasks/game-alchemists-cauldron/README.md)
 
+## Project structure
+
+Game rules live outside the DOM code: `data`, `logic`, `state` and `storage` never touch the page,
+only `ui` renders and listens to events.
+
+```text
+src/
+  assets/    static game assets (SVG icons)
+  data/      fixed tables: ingredients, recipes, difficulty settings
+  logic/     pure game rules: cauldron sums, stock, recipe picking, brew check, timer
+  state/     the game state object and the actions that change it
+  storage/   localStorage helpers: leaderboard and saves
+  styles/    CSS
+  types/     shared TypeScript types and interfaces
+  ui/        DOM rendering and event handling
+public/      files copied to the build as they are
+```
+
 ## Tech stack
 
 - TypeScript (no frameworks, no game engines, no UI libraries)
