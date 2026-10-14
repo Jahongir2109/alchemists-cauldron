@@ -8,7 +8,7 @@ export interface IConfirmOptions {
   onConfirm: () => void;
 }
 
-// In-app replacement for window.confirm().
+// In-app confirmation dialog, used instead of the browser's built-in one.
 export class ConfirmDialog {
   private readonly dialog: ModalDialog = new ModalDialog('dialog--confirm');
 
