@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { RECIPES } from '../data/recipes';
 import type { IGameState, IRecipe } from '../types/game';
-import { addIngredient, brew, createMenuState, startGame } from './game-state';
+import {
+  addIngredient,
+  brew,
+  createMenuState,
+  finishIfOver,
+  startGame,
+  updateTimeLeft,
+} from './game-state';
 
 const acidSpark: IRecipe | undefined = RECIPES.find(
   (recipe: IRecipe) => recipe.id === 'acid-spark',
@@ -131,6 +138,50 @@ describe('game state', () => {
     expect(state.cauldronIngredients).toEqual([]);
     expect(state.shelfStock).toEqual({ 'void-essence': 4 });
     expect(state.activeRecipe).toBe(acidSpark);
+  });
+
+  it('ends the game when the last life is lost', () => {
+    if (!acidSpark) {
+      throw new Error('Acid Spark recipe is missing');
+    }
+
+    let state: IGameState = {
+      ...startWithStock({ 'void-essence': 5 }),
+      activeRecipe: acidSpark,
+      lives: 1,
+    };
+
+    state = brew(addIngredient(state, 'void-essence'));
+
+    expect(state.status).toBe('game-over');
+    expect(state.gameOverReason).toBe('lives');
+  });
+
+  it('ends the game when the time is over', () => {
+    const state = updateTimeLeft(startWithStock({ 'fairy-dust': 5 }), -20);
+
+    expect(state.timeLeft).toBe(0);
+    expect(state.status).toBe('game-over');
+    expect(state.gameOverReason).toBe('time');
+  });
+
+  it('keeps playing while the cauldron still has ingredients', () => {
+    const state = addIngredient(startWithStock({ 'fairy-dust': 1 }), 'fairy-dust');
+
+    expect(finishIfOver(state).status).toBe('playing');
+  });
+
+  it('ends with "Out of ingredients" when the shelf and the cauldron are empty', () => {
+    if (!acidSpark) {
+      throw new Error('Acid Spark recipe is missing');
+    }
+
+    let state: IGameState = { ...startWithStock({ 'fairy-dust': 1 }), activeRecipe: acidSpark };
+
+    state = brew(addIngredient(state, 'fairy-dust'));
+
+    expect(state.status).toBe('game-over');
+    expect(state.gameOverReason).toBe('ingredients');
   });
 
   it('ignores add actions outside of active play', () => {

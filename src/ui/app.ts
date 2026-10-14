@@ -1,5 +1,6 @@
 import { getShelfIngredients } from '../data/ingredients';
 import { calculateCauldron } from '../logic/calculate-cauldron';
+import { CountdownTimer, secondsToMs } from '../logic/timer';
 import {
   addIngredient,
   brew,
@@ -8,11 +9,14 @@ import {
   getSettings,
   isCauldronFull,
   startGame,
+  updateTimeLeft,
 } from '../state/game-state';
 import type { IDifficultySettings, IGameState } from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
 import { createButton, createElement } from './dom';
+import { GameOverView } from './game-over';
+import { HudView } from './hud';
 import type { IGameLayout } from './layout';
 import { createGameLayout } from './layout';
 import { RecipePanelView } from './recipe-panel';
@@ -21,7 +25,13 @@ import { ShelfView } from './shelf';
 export class GameApp {
   private state: IGameState = createMenuState();
 
+  private readonly timer: CountdownTimer = new CountdownTimer();
+
+  private frameId: number | null = null;
+
   private readonly layout: IGameLayout = createGameLayout();
+
+  private readonly hud: HudView;
 
   private readonly shelf: ShelfView;
 
@@ -31,6 +41,8 @@ export class GameApp {
 
   private readonly bars: BarsView;
 
+  private readonly gameOver: GameOverView;
+
   private readonly brewMessage: HTMLParagraphElement;
 
   private readonly startButton: HTMLButtonElement;
@@ -38,12 +50,21 @@ export class GameApp {
   private readonly brewButton: HTMLButtonElement;
 
   public constructor(root: HTMLElement) {
+    this.hud = new HudView(this.layout.header);
     this.shelf = new ShelfView(this.layout.shelf, (id: string) => {
       this.handleAddIngredient(id);
     });
     this.cauldron = new CauldronView(this.layout.cauldron);
     this.recipe = new RecipePanelView(this.layout.recipe);
     this.bars = new BarsView(this.layout.bars);
+    this.gameOver = new GameOverView({
+      onPlayAgain: (): void => {
+        this.startNewGame();
+      },
+      onExitToMenu: (): void => {
+        this.exitToMenu();
+      },
+    });
 
     this.brewMessage = createElement('p', {
       className: 'brew-message',
@@ -64,8 +85,13 @@ export class GameApp {
   }
 
   private startNewGame(): void {
-    this.state = startGame(this.state.difficulty);
-    this.render();
+    this.gameOver.hide();
+    this.setState(startGame(this.state.difficulty));
+  }
+
+  private exitToMenu(): void {
+    this.gameOver.hide();
+    this.setState(createMenuState(this.state.difficulty));
   }
 
   private handleAddIngredient(id: string): void {
@@ -73,7 +99,7 @@ export class GameApp {
       return;
     }
 
-    this.setState(addIngredient(this.state, id));
+    this.setState(addIngredient(this.syncTime(), id));
   }
 
   private handleBrew(): void {
@@ -81,7 +107,14 @@ export class GameApp {
       return;
     }
 
-    this.setState(brew(this.state));
+    this.setState(brew(this.syncTime()));
+  }
+
+  // Copies the timestamp-based remaining time into the state before an action changes it.
+  private syncTime(): IGameState {
+    return this.timer.isRunning()
+      ? updateTimeLeft(this.state, this.timer.getTimeLeft())
+      : this.state;
   }
 
   private setState(next: IGameState): void {
@@ -89,8 +122,59 @@ export class GameApp {
       return;
     }
 
+    const previous: IGameState = this.state;
+
     this.state = next;
+    this.syncTimer();
     this.render();
+
+    if (previous.status !== 'game-over' && next.status === 'game-over') {
+      this.gameOver.show(next.score, next.gameOverReason);
+    }
+  }
+
+  private syncTimer(): void {
+    if (this.state.status === 'playing') {
+      this.timer.start(this.state.timeLeft);
+      this.requestFrame();
+
+      return;
+    }
+
+    this.timer.stop();
+    this.cancelFrame();
+  }
+
+  private requestFrame(): void {
+    this.frameId ??= requestAnimationFrame(() => {
+      this.frameId = null;
+      this.tick();
+    });
+  }
+
+  private cancelFrame(): void {
+    if (this.frameId !== null) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = null;
+    }
+  }
+
+  private tick(): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    const timeLeft: number = this.timer.getTimeLeft();
+
+    if (timeLeft <= 0) {
+      this.setState(updateTimeLeft(this.state, 0));
+
+      return;
+    }
+
+    this.state = { ...this.state, timeLeft };
+    this.hud.renderTime(timeLeft, secondsToMs(getSettings(this.state).startTimeSeconds));
+    this.requestFrame();
   }
 
   private render(): void {
@@ -99,6 +183,13 @@ export class GameApp {
     const isMenu: boolean = state.status === 'menu';
 
     this.layout.root.dataset.status = state.status;
+
+    this.hud.render({
+      score: state.score,
+      timeLeft: state.timeLeft,
+      startTime: secondsToMs(settings.startTimeSeconds),
+      lives: state.lives,
+    });
 
     this.shelf.render({
       ingredients: isMenu ? [] : getShelfIngredients(settings.shelfSize),
