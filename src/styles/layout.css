@@ -65,6 +65,14 @@
   transition: filter var(--duration);
 }
 
+/* Paused: hide the field so the player cannot plan moves */
+.game[data-status='paused'] .field,
+.game[data-status='paused'] .controls__center {
+  filter: blur(10px) grayscale(0.6);
+  pointer-events: none;
+  user-select: none;
+}
+
 .shelf {
   grid-area: shelf;
 }

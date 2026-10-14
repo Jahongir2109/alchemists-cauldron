@@ -7,6 +7,8 @@ import {
   brew,
   createMenuState,
   finishIfOver,
+  pauseGame,
+  resumeGame,
   startGame,
   updateTimeLeft,
 } from './game-state';
@@ -182,6 +184,17 @@ describe('game state', () => {
 
     expect(state.status).toBe('game-over');
     expect(state.gameOverReason).toBe('ingredients');
+  });
+
+  it('pauses and resumes only from the right state', () => {
+    const playing = startWithStock({ 'fairy-dust': 5 });
+    const paused = pauseGame(playing);
+
+    expect(paused.status).toBe('paused');
+    expect(pauseGame(paused)).toBe(paused);
+    expect(resumeGame(paused).status).toBe('playing');
+    expect(resumeGame(playing)).toBe(playing);
+    expect(brew(addIngredient(paused, 'fairy-dust'))).toBe(paused);
   });
 
   it('ignores add actions outside of active play', () => {

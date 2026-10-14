@@ -138,6 +138,12 @@ export const brew = (state: IGameState, random: RandomSource = Math.random): IGa
   });
 };
 
+export const pauseGame = (state: IGameState): IGameState =>
+  state.status === 'playing' ? { ...state, status: 'paused' } : state;
+
+export const resumeGame = (state: IGameState): IGameState =>
+  state.status === 'paused' ? { ...state, status: 'playing' } : state;
+
 // The remaining time always comes from the timestamp timer, the state only stores it.
 export const updateTimeLeft = (state: IGameState, timeLeft: number): IGameState =>
   finishIfOver({ ...state, timeLeft: Math.max(0, timeLeft) });
