@@ -1,0 +1,129 @@
+.dialog--leaderboard {
+  width: min(100% - 32px, 620px);
+}
+
+.leaderboard__scroll {
+  max-height: 55vh;
+  overflow: auto;
+}
+
+.leaderboard__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard__table th,
+.leaderboard__table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.leaderboard__table th {
+  position: sticky;
+  top: 0;
+  background: #1a2115;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.leaderboard__rank {
+  width: 2.5em;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+.leaderboard__name {
+  overflow-wrap: anywhere;
+}
+
+.leaderboard__score {
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.leaderboard__date {
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.leaderboard__row.is-current td {
+  background: var(--color-accent-soft);
+}
+
+@media (width <= 480px) {
+  .leaderboard__table th,
+  .leaderboard__table td {
+    padding: var(--space-1);
+    font-size: 0.85rem;
+  }
+
+  .leaderboard__date {
+    white-space: normal;
+  }
+}
+
+/* Game over name form */
+
+.game-over__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.game-over__form-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-align: center;
+  color: var(--color-gold);
+}
+
+.game-over__input {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  background: #0a0d08;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.game-over__input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: var(--glow-accent);
+}
+
+.game-over__input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.game-over__hint {
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.game-over__hint.is-error {
+  color: var(--color-danger);
+}
+
+.game-over__saved {
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-accent);
+}
+
+/* Menu */
+
+.menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
