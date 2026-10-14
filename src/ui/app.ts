@@ -8,6 +8,8 @@ import {
   createMenuState,
   getSettings,
   isCauldronFull,
+  pauseGame,
+  resumeGame,
   startGame,
   updateTimeLeft,
 } from '../state/game-state';
@@ -19,6 +21,7 @@ import { GameOverView } from './game-over';
 import { HudView } from './hud';
 import type { IGameLayout } from './layout';
 import { createGameLayout } from './layout';
+import { PauseView } from './pause';
 import { RecipePanelView } from './recipe-panel';
 import { ShelfView } from './shelf';
 
@@ -42,6 +45,10 @@ export class GameApp {
   private readonly bars: BarsView;
 
   private readonly gameOver: GameOverView;
+
+  private readonly pause: PauseView;
+
+  private readonly pauseButton: HTMLButtonElement;
 
   private readonly brewMessage: HTMLParagraphElement;
 
@@ -80,18 +87,53 @@ export class GameApp {
     });
     this.layout.centerAction.append(this.startButton, this.brewButton);
 
+    this.pause = new PauseView({
+      onResume: (): void => {
+        this.resume();
+      },
+      onExitToMenu: (): void => {
+        this.exitToMenu();
+      },
+    });
+    this.pauseButton = createButton('Pause', 'button', () => {
+      this.pauseRun();
+    });
+    this.layout.controlsRight.append(this.pauseButton);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.pauseRun();
+      }
+    });
+
     root.replaceChildren(this.layout.root);
     this.render();
   }
 
   private startNewGame(): void {
     this.gameOver.hide();
+    this.pause.hide();
     this.setState(startGame(this.state.difficulty));
   }
 
   private exitToMenu(): void {
     this.gameOver.hide();
+    this.pause.hide();
     this.setState(createMenuState(this.state.difficulty));
+  }
+
+  private pauseRun(): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    this.setState(pauseGame(this.syncTime()));
+    this.pause.show();
+  }
+
+  private resume(): void {
+    this.pause.hide();
+    this.setState(resumeGame(this.state));
   }
 
   private handleAddIngredient(id: string): void {
@@ -220,6 +262,8 @@ export class GameApp {
     this.startButton.hidden = !isMenu;
     this.brewButton.hidden = isMenu;
     this.brewButton.disabled = !canBrew(state);
+    this.pauseButton.hidden = state.status !== 'playing' && state.status !== 'paused';
+    this.pauseButton.disabled = state.status !== 'playing';
   }
 
   private renderBrewMessage(settings: IDifficultySettings): void {

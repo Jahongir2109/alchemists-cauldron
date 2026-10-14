@@ -9,7 +9,9 @@ export interface IGameLayout {
   recipe: HTMLElement;
   bars: HTMLElement;
   controls: HTMLElement;
+  controlsLeft: HTMLDivElement;
   centerAction: HTMLDivElement;
+  controlsRight: HTMLDivElement;
 }
 
 const createPanel = (tag: 'section' | 'aside', className: string, title: string): HTMLElement =>
@@ -39,8 +41,14 @@ export const createGameLayout = (): IGameLayout => {
     bars,
   ]);
 
+  const controlsLeft: HTMLDivElement = createElement('div', { className: 'controls__left' });
   const centerAction: HTMLDivElement = createElement('div', { className: 'controls__center' });
-  const controls: HTMLElement = createElement('footer', { className: 'controls' }, [centerAction]);
+  const controlsRight: HTMLDivElement = createElement('div', { className: 'controls__right' });
+  const controls: HTMLElement = createElement('footer', { className: 'controls' }, [
+    controlsLeft,
+    centerAction,
+    controlsRight,
+  ]);
 
   const root: HTMLDivElement = createElement('div', { className: 'game' }, [
     header,
@@ -48,5 +56,17 @@ export const createGameLayout = (): IGameLayout => {
     controls,
   ]);
 
-  return { root, header, field, shelf, cauldron, recipe, bars, controls, centerAction };
+  return {
+    root,
+    header,
+    field,
+    shelf,
+    cauldron,
+    recipe,
+    bars,
+    controls,
+    controlsLeft,
+    centerAction,
+    controlsRight,
+  };
 };
