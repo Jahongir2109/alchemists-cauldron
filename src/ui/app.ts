@@ -1,0 +1,355 @@
+import { getShelfIngredients } from '../data/ingredients';
+import { calculateCauldron } from '../logic/calculate-cauldron';
+import { addLeaderboardEntry, isTopScore, normalizePlayerName } from '../logic/leaderboard';
+import { CountdownTimer, secondsToMs } from '../logic/timer';
+import {
+  addIngredient,
+  brew,
+  canBrew,
+  createMenuState,
+  getSettings,
+  isCauldronFull,
+  pauseGame,
+  resumeGame,
+  startGame,
+  updateTimeLeft,
+} from '../state/game-state';
+import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
+import type { IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
+import { BarsView } from './bars';
+import { CauldronView } from './cauldron';
+import { createButton, createElement } from './dom';
+import { GameOverView } from './game-over';
+import { HelpView } from './help';
+import { HudView } from './hud';
+import type { IGameLayout } from './layout';
+import { createGameLayout } from './layout';
+import { LeaderboardView } from './leaderboard';
+import { MenuView } from './menu';
+import { PauseView } from './pause';
+import { RecipePanelView } from './recipe-panel';
+import { ShelfView } from './shelf';
+
+export class GameApp {
+  private state: IGameState = createMenuState();
+
+  private readonly timer: CountdownTimer = new CountdownTimer();
+
+  private frameId: number | null = null;
+
+  private readonly layout: IGameLayout = createGameLayout();
+
+  private readonly hud: HudView;
+
+  private readonly shelf: ShelfView;
+
+  private readonly cauldron: CauldronView;
+
+  private readonly recipe: RecipePanelView;
+
+  private readonly bars: BarsView;
+
+  private readonly gameOver: GameOverView;
+
+  private readonly pause: PauseView;
+
+  private readonly pauseButton: HTMLButtonElement;
+
+  private readonly leaderboard: LeaderboardView = new LeaderboardView();
+
+  private readonly menu: MenuView;
+
+  private readonly menuButton: HTMLButtonElement;
+
+  private readonly help: HelpView = new HelpView();
+
+  private readonly helpButton: HTMLButtonElement;
+
+  private finishedAt = 0;
+
+  private readonly brewMessage: HTMLParagraphElement;
+
+  private readonly startButton: HTMLButtonElement;
+
+  private readonly brewButton: HTMLButtonElement;
+
+  public constructor(root: HTMLElement) {
+    this.hud = new HudView(this.layout.header);
+    this.shelf = new ShelfView(this.layout.shelf, (id: string) => {
+      this.handleAddIngredient(id);
+    });
+    this.cauldron = new CauldronView(this.layout.cauldron);
+    this.recipe = new RecipePanelView(this.layout.recipe);
+    this.bars = new BarsView(this.layout.bars);
+    this.gameOver = new GameOverView({
+      onPlayAgain: (): void => {
+        this.startNewGame();
+      },
+      onExitToMenu: (): void => {
+        this.exitToMenu();
+      },
+      onOpenLeaderboard: (): void => {
+        this.leaderboard.show();
+      },
+      onSubmitScore: (name: string): boolean => this.submitScore(name),
+    });
+
+    this.brewMessage = createElement('p', {
+      className: 'brew-message',
+      attributes: { 'aria-live': 'polite' },
+    });
+    this.layout.cauldron.append(this.brewMessage);
+
+    this.startButton = createButton('Start Game', 'button button--primary button--large', () => {
+      this.startNewGame();
+    });
+    this.brewButton = createButton('Brew', 'button button--primary button--large', () => {
+      this.handleBrew();
+    });
+    this.layout.centerAction.append(this.startButton, this.brewButton);
+
+    this.pause = new PauseView({
+      onResume: (): void => {
+        this.resume();
+      },
+      onExitToMenu: (): void => {
+        this.exitToMenu();
+      },
+    });
+    this.pauseButton = createButton('Pause', 'button', () => {
+      this.pauseRun();
+    });
+    this.menu = new MenuView({
+      onNewGame: (): void => {
+        this.startNewGame();
+      },
+      onOpenLeaderboard: (): void => {
+        this.leaderboard.show();
+      },
+    });
+    this.menuButton = createButton('Menu', 'button', () => {
+      this.menu.show(this.state.difficulty);
+    });
+    this.layout.controlsRight.append(this.pauseButton, this.menuButton);
+
+    this.helpButton = createButton('Help', 'button', () => {
+      this.help.show(getSettings(this.state));
+    });
+    this.layout.controlsLeft.append(this.helpButton);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.pauseRun();
+      }
+    });
+
+    root.replaceChildren(this.layout.root);
+    this.render();
+  }
+
+  private startNewGame(): void {
+    this.closeDialogs();
+    this.setState(startGame(this.state.difficulty));
+  }
+
+  private exitToMenu(): void {
+    this.closeDialogs();
+    this.setState(createMenuState(this.state.difficulty));
+  }
+
+  private closeDialogs(): void {
+    this.gameOver.hide();
+    this.pause.hide();
+    this.menu.hide();
+    this.help.hide();
+  }
+
+  private submitScore(name: string): boolean {
+    const entry: ILeaderboardEntry = {
+      name: normalizePlayerName(name),
+      score: this.state.score,
+      date: this.finishedAt,
+      difficulty: this.state.difficulty,
+    };
+    const isSaved: boolean = saveLeaderboard(addLeaderboardEntry(loadLeaderboard(), entry));
+
+    if (isSaved) {
+      this.leaderboard.show(entry);
+    }
+
+    return isSaved;
+  }
+
+  private pauseRun(): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    this.setState(pauseGame(this.syncTime()));
+    this.pause.show();
+  }
+
+  private resume(): void {
+    this.pause.hide();
+    this.setState(resumeGame(this.state));
+  }
+
+  private handleAddIngredient(id: string): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    this.setState(addIngredient(this.syncTime(), id));
+  }
+
+  private handleBrew(): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    this.setState(brew(this.syncTime()));
+  }
+
+  // Copies the timestamp-based remaining time into the state before an action changes it.
+  private syncTime(): IGameState {
+    return this.timer.isRunning()
+      ? updateTimeLeft(this.state, this.timer.getTimeLeft())
+      : this.state;
+  }
+
+  private setState(next: IGameState): void {
+    if (next === this.state) {
+      return;
+    }
+
+    const previous: IGameState = this.state;
+
+    this.state = next;
+    this.syncTimer();
+    this.render();
+
+    if (previous.status !== 'game-over' && next.status === 'game-over') {
+      this.finishedAt = Date.now();
+      this.gameOver.show({
+        score: next.score,
+        reason: next.gameOverReason,
+        isTopScore: isTopScore(loadLeaderboard(), next.score),
+      });
+    }
+  }
+
+  private syncTimer(): void {
+    if (this.state.status === 'playing') {
+      this.timer.start(this.state.timeLeft);
+      this.requestFrame();
+
+      return;
+    }
+
+    this.timer.stop();
+    this.cancelFrame();
+  }
+
+  private requestFrame(): void {
+    this.frameId ??= requestAnimationFrame(() => {
+      this.frameId = null;
+      this.tick();
+    });
+  }
+
+  private cancelFrame(): void {
+    if (this.frameId !== null) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = null;
+    }
+  }
+
+  private tick(): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    const timeLeft: number = this.timer.getTimeLeft();
+
+    if (timeLeft <= 0) {
+      this.setState(updateTimeLeft(this.state, 0));
+
+      return;
+    }
+
+    this.state = { ...this.state, timeLeft };
+    this.hud.renderTime(timeLeft, secondsToMs(getSettings(this.state).startTimeSeconds));
+    this.requestFrame();
+  }
+
+  private render(): void {
+    const { state } = this;
+    const settings: IDifficultySettings = getSettings(state);
+    const isMenu: boolean = state.status === 'menu';
+
+    this.layout.root.dataset.status = state.status;
+
+    this.hud.render({
+      score: state.score,
+      timeLeft: state.timeLeft,
+      startTime: secondsToMs(settings.startTimeSeconds),
+      lives: state.lives,
+    });
+
+    this.shelf.render({
+      ingredients: isMenu ? [] : getShelfIngredients(settings.shelfSize),
+      stock: state.shelfStock,
+      isBlocked: state.status !== 'playing' || isCauldronFull(state),
+    });
+
+    this.cauldron.render({
+      ingredients: state.cauldronIngredients,
+      capacity: isMenu ? 0 : settings.maxCauldronIngredients,
+    });
+
+    this.recipe.render({
+      recipe: state.activeRecipe,
+      added: state.cauldronIngredients.length,
+      capacity: settings.maxCauldronIngredients,
+      tolerance: settings.tolerance,
+    });
+
+    this.bars.render({
+      values: calculateCauldron(state.cauldronIngredients),
+      recipe: state.activeRecipe,
+      tolerance: settings.tolerance,
+    });
+
+    this.renderBrewMessage(settings);
+
+    this.startButton.hidden = !isMenu;
+    this.brewButton.hidden = isMenu;
+    this.brewButton.disabled = !canBrew(state);
+    this.pauseButton.hidden = state.status !== 'playing' && state.status !== 'paused';
+    this.pauseButton.disabled = state.status !== 'playing';
+    this.menuButton.hidden = !isMenu;
+    this.helpButton.hidden = !isMenu;
+  }
+
+  private renderBrewMessage(settings: IDifficultySettings): void {
+    const result: IGameState['lastBrewResult'] = this.state.lastBrewResult;
+
+    this.brewMessage.className = 'brew-message';
+
+    if (result === 'success') {
+      this.brewMessage.classList.add('brew-message--success');
+      this.brewMessage.textContent = `Potion brewed! +${String(settings.scorePerBrew)} score, +${String(settings.timeBonusSeconds)} s. A new recipe is ready.`;
+
+      return;
+    }
+
+    if (result === 'failure') {
+      this.brewMessage.classList.add('brew-message--failure');
+      this.brewMessage.textContent = 'Wrong mixture! You lost 1 life.';
+
+      return;
+    }
+
+    this.brewMessage.textContent = '';
+  }
+}

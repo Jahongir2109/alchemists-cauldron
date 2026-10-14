@@ -1,0 +1,150 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 1440px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: var(--space-3);
+}
+
+.panel {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: linear-gradient(180deg, var(--color-panel-light) 0%, var(--color-panel) 100%);
+  box-shadow: var(--shadow-panel);
+}
+
+.panel__title {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+/* HUD */
+
+.hud {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hud__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  color: #c9f7b0;
+  text-shadow:
+    0 0 10px rgb(125 255 79 / 55%),
+    0 2px 0 #1d3311;
+}
+
+/* Field: mobile first, one column */
+
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'recipe'
+    'cauldron'
+    'bars'
+    'shelf';
+  align-content: start;
+  gap: var(--space-4);
+  flex: 1;
+  transition: filter var(--duration);
+}
+
+/* Paused: hide the field so the player cannot plan moves */
+.game[data-status='paused'] .field,
+.game[data-status='paused'] .controls__center {
+  filter: blur(10px) grayscale(0.6);
+  pointer-events: none;
+  user-select: none;
+}
+
+.shelf {
+  grid-area: shelf;
+}
+
+.cauldron {
+  grid-area: cauldron;
+}
+
+/* Controls */
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-areas: 'left center right';
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+.controls__left {
+  display: flex;
+  gap: var(--space-2);
+  grid-area: left;
+  justify-self: start;
+}
+
+.controls__center {
+  display: flex;
+  grid-area: center;
+  justify-content: center;
+}
+
+.controls__right {
+  display: flex;
+  gap: var(--space-2);
+  grid-area: right;
+  justify-self: end;
+}
+
+@media (width <= 480px) {
+  .controls {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'center center'
+      'left right';
+  }
+
+  .button--large {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (width >= 700px) {
+  .game {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .field {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'cauldron recipe'
+      'bars bars'
+      'shelf shelf';
+  }
+}
+
+@media (width >= 1100px) {
+  .field {
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(260px, 320px);
+    grid-template-areas:
+      'shelf cauldron recipe'
+      'bars bars bars';
+  }
+}
