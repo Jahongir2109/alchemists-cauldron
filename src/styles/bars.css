@@ -1,0 +1,187 @@
+.bars {
+  display: grid;
+  grid-area: bars;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@media (width >= 700px) {
+  .bars {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bar {
+  --bar-color: var(--color-accent);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--color-panel-light) 0%, var(--color-panel) 100%);
+  transition:
+    border-color var(--duration),
+    box-shadow var(--duration);
+}
+
+.bar--temperature {
+  --bar-color: var(--color-temperature);
+}
+
+.bar--density {
+  --bar-color: var(--color-density);
+}
+
+.bar--magicPower {
+  --bar-color: var(--color-magic);
+}
+
+.bar__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bar__icon {
+  display: flex;
+  width: 24px;
+  height: 24px;
+}
+
+.bar__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.bar__label {
+  flex: 1;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bar-color);
+}
+
+.bar__value {
+  min-width: 3ch;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar__track {
+  position: relative;
+  height: 22px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 11px;
+  background: #0a0d08;
+}
+
+.bar__zone,
+.bar__zone-core,
+.bar__fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--start, 0%);
+  width: var(--width, 0%);
+}
+
+.bar__zone {
+  background: rgb(125 255 79 / 14%);
+  border-right: 1px dashed rgb(125 255 79 / 60%);
+  border-left: 1px dashed rgb(125 255 79 / 60%);
+  transition:
+    left var(--duration-slow) ease,
+    width var(--duration-slow) ease;
+}
+
+.bar__zone-core {
+  background: rgb(125 255 79 / 28%);
+  border-right: 2px solid var(--color-accent);
+  border-left: 2px solid var(--color-accent);
+  transition:
+    left var(--duration-slow) ease,
+    width var(--duration-slow) ease;
+}
+
+.bar__fill {
+  top: 6px;
+  bottom: 6px;
+  border-radius: 4px;
+  background: var(--bar-color);
+  opacity: 0.85;
+  transition:
+    left var(--duration-slow) ease,
+    width var(--duration-slow) ease;
+}
+
+.bar__zero {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--position);
+  width: 2px;
+  background: var(--color-muted);
+  transform: translateX(-50%);
+}
+
+.bar__marker {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: var(--position, 0%);
+  width: 6px;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 0 6px rgb(255 255 255 / 70%);
+  transform: translateX(-50%);
+  transition:
+    left var(--duration-slow) ease,
+    background-color var(--duration),
+    box-shadow var(--duration);
+}
+
+.bar__scale {
+  position: relative;
+  height: 1.1em;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.bar__scale-label {
+  position: absolute;
+  left: var(--position);
+  transform: translateX(-50%);
+}
+
+.bar__scale-label:first-child {
+  transform: none;
+}
+
+.bar__scale-label:last-child {
+  transform: translateX(-100%);
+}
+
+/* Value inside the recipe range: green glow */
+
+.bar.is-in-range {
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 14px rgb(125 255 79 / 45%),
+    inset 0 0 10px rgb(125 255 79 / 15%);
+}
+
+.bar.is-in-range .bar__marker {
+  background: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent);
+}
+
+.bar.is-in-range .bar__value {
+  color: var(--color-accent);
+  text-shadow: var(--glow-accent);
+}
