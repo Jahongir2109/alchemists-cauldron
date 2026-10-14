@@ -4,9 +4,15 @@ import { checkBrew } from '../logic/brew-check';
 import { calculateCauldron } from '../logic/calculate-cauldron';
 import { pickRecipe } from '../logic/recipe-generator';
 import type { RandomSource } from '../logic/random';
-import { createStock, hasStock, takeFromStock } from '../logic/stock';
+import { createStock, hasStock, isShelfEmpty, takeFromStock } from '../logic/stock';
 import { addTimeBonus, secondsToMs } from '../logic/timer';
-import type { Difficulty, IDifficultySettings, IGameState, IIngredient } from '../types/game';
+import type {
+  Difficulty,
+  GameOverReason,
+  IDifficultySettings,
+  IGameState,
+  IIngredient,
+} from '../types/game';
 
 export const getSettings = (state: IGameState): IDifficultySettings =>
   getDifficultySettings(state.difficulty);
@@ -70,6 +76,33 @@ export const addIngredient = (state: IGameState, id: string): IGameState => {
   };
 };
 
+// Lives first, then time, then "Out of ingredients": the shelf and the cauldron are both empty.
+export const getGameOverReason = (state: IGameState): GameOverReason | null => {
+  if (state.lives <= 0) {
+    return 'lives';
+  }
+
+  if (state.timeLeft <= 0) {
+    return 'time';
+  }
+
+  if (isShelfEmpty(state.shelfStock) && state.cauldronIngredients.length === 0) {
+    return 'ingredients';
+  }
+
+  return null;
+};
+
+export const finishIfOver = (state: IGameState): IGameState => {
+  if (state.status !== 'playing') {
+    return state;
+  }
+
+  const reason: GameOverReason | null = getGameOverReason(state);
+
+  return reason ? { ...state, status: 'game-over', gameOverReason: reason } : state;
+};
+
 // Used ingredients are always spent: the cauldron is cleared and the stock is not refilled.
 export const brew = (state: IGameState, random: RandomSource = Math.random): IGameState => {
   if (!canBrew(state) || !state.activeRecipe) {
@@ -85,10 +118,14 @@ export const brew = (state: IGameState, random: RandomSource = Math.random): IGa
   const cleared: IGameState = { ...state, cauldronIngredients: [] };
 
   if (!isSuccess) {
-    return { ...cleared, lives: Math.max(0, state.lives - 1), lastBrewResult: 'failure' };
+    return finishIfOver({
+      ...cleared,
+      lives: Math.max(0, state.lives - 1),
+      lastBrewResult: 'failure',
+    });
   }
 
-  return {
+  return finishIfOver({
     ...cleared,
     score: state.score + settings.scorePerBrew,
     timeLeft: addTimeBonus(
@@ -98,5 +135,9 @@ export const brew = (state: IGameState, random: RandomSource = Math.random): IGa
     ),
     activeRecipe: pickRecipe(state.difficulty, random),
     lastBrewResult: 'success',
-  };
+  });
 };
+
+// The remaining time always comes from the timestamp timer, the state only stores it.
+export const updateTimeLeft = (state: IGameState, timeLeft: number): IGameState =>
+  finishIfOver({ ...state, timeLeft: Math.max(0, timeLeft) });
