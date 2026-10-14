@@ -1,0 +1,119 @@
+.recipe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  grid-area: recipe;
+  border-color: #6b5634;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(224 189 114 / 12%) 0%, transparent 70%),
+    linear-gradient(180deg, #2a2216 0%, #1a150d 100%);
+}
+
+.recipe .panel__title {
+  margin-bottom: 0;
+}
+
+.recipe__name {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  color: #f4dfae;
+}
+
+.recipe__counter {
+  align-self: center;
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid #6b5634;
+  border-radius: var(--radius);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  transition:
+    color var(--duration),
+    border-color var(--duration),
+    box-shadow var(--duration);
+}
+
+/* Full cauldron: highlight the counter so the blocked shelf makes sense */
+.recipe__counter.is-full {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  box-shadow: 0 0 12px var(--color-danger-soft);
+}
+
+.recipe__ranges {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.recipe__range {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid rgb(224 189 114 / 18%);
+}
+
+.recipe__range-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.recipe__range-icon {
+  display: flex;
+  width: 22px;
+  height: 22px;
+}
+
+.recipe__range-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.recipe__range dd {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.recipe__range--temperature dd {
+  color: var(--color-temperature);
+}
+
+.recipe__range--density dd {
+  color: var(--color-density);
+}
+
+.recipe__range--magicPower dd {
+  color: var(--color-magic);
+}
+
+.recipe__tolerance {
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.brew-message {
+  min-height: 1.5em;
+  font-weight: 600;
+  text-align: center;
+}
+
+.brew-message--success {
+  color: var(--color-accent);
+  text-shadow: var(--glow-accent);
+}
+
+.brew-message--failure {
+  color: var(--color-danger);
+}

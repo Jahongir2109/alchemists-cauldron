@@ -6,13 +6,14 @@ export interface IGameLayout {
   field: HTMLElement;
   shelf: HTMLElement;
   cauldron: HTMLElement;
+  recipe: HTMLElement;
   bars: HTMLElement;
   controls: HTMLElement;
   centerAction: HTMLDivElement;
 }
 
-const createPanel = (className: string, title: string): HTMLElement =>
-  createElement('section', { className: `panel ${className}` }, [
+const createPanel = (tag: 'section' | 'aside', className: string, title: string): HTMLElement =>
+  createElement(tag, { className: `panel ${className}` }, [
     createElement('h2', { className: 'panel__title', text: title }),
   ]);
 
@@ -21,16 +22,22 @@ export const createGameLayout = (): IGameLayout => {
     createElement('h1', { className: 'hud__title', text: "Alchemist's Cauldron" }),
   ]);
 
-  const shelf: HTMLElement = createPanel('shelf', 'Ingredients');
+  const shelf: HTMLElement = createPanel('section', 'shelf', 'Ingredients');
   const cauldron: HTMLElement = createElement('section', {
     className: 'cauldron',
     attributes: { 'aria-label': 'Cauldron' },
   });
+  const recipe: HTMLElement = createPanel('aside', 'recipe', 'Current recipe');
   const bars: HTMLElement = createElement('section', {
     className: 'bars',
     attributes: { 'aria-label': 'Cauldron parameters' },
   });
-  const field: HTMLElement = createElement('main', { className: 'field' }, [shelf, cauldron, bars]);
+  const field: HTMLElement = createElement('main', { className: 'field' }, [
+    shelf,
+    cauldron,
+    recipe,
+    bars,
+  ]);
 
   const centerAction: HTMLDivElement = createElement('div', { className: 'controls__center' });
   const controls: HTMLElement = createElement('footer', { className: 'controls' }, [centerAction]);
@@ -41,5 +48,5 @@ export const createGameLayout = (): IGameLayout => {
     controls,
   ]);
 
-  return { root, header, field, shelf, cauldron, bars, controls, centerAction };
+  return { root, header, field, shelf, cauldron, recipe, bars, controls, centerAction };
 };
