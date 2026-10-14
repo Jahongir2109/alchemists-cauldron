@@ -6,6 +6,7 @@ export interface IGameLayout {
   field: HTMLElement;
   shelf: HTMLElement;
   cauldron: HTMLElement;
+  bars: HTMLElement;
   controls: HTMLElement;
   centerAction: HTMLDivElement;
 }
@@ -25,7 +26,11 @@ export const createGameLayout = (): IGameLayout => {
     className: 'cauldron',
     attributes: { 'aria-label': 'Cauldron' },
   });
-  const field: HTMLElement = createElement('main', { className: 'field' }, [shelf, cauldron]);
+  const bars: HTMLElement = createElement('section', {
+    className: 'bars',
+    attributes: { 'aria-label': 'Cauldron parameters' },
+  });
+  const field: HTMLElement = createElement('main', { className: 'field' }, [shelf, cauldron, bars]);
 
   const centerAction: HTMLDivElement = createElement('div', { className: 'controls__center' });
   const controls: HTMLElement = createElement('footer', { className: 'controls' }, [centerAction]);
@@ -36,5 +41,5 @@ export const createGameLayout = (): IGameLayout => {
     controls,
   ]);
 
-  return { root, header, field, shelf, cauldron, controls, centerAction };
+  return { root, header, field, shelf, cauldron, bars, controls, centerAction };
 };

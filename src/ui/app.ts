@@ -6,7 +6,9 @@ import {
   isCauldronFull,
   startGame,
 } from '../state/game-state';
+import { calculateCauldron } from '../logic/calculate-cauldron';
 import type { IDifficultySettings, IGameState } from '../types/game';
+import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
 import { createButton } from './dom';
 import type { IGameLayout } from './layout';
@@ -22,6 +24,8 @@ export class GameApp {
 
   private readonly cauldron: CauldronView;
 
+  private readonly bars: BarsView;
+
   private readonly startButton: HTMLButtonElement;
 
   public constructor(root: HTMLElement) {
@@ -29,6 +33,7 @@ export class GameApp {
       this.handleAddIngredient(id);
     });
     this.cauldron = new CauldronView(this.layout.cauldron);
+    this.bars = new BarsView(this.layout.bars);
 
     this.startButton = createButton('Start Game', 'button button--primary button--large', () => {
       this.startNewGame();
@@ -77,6 +82,12 @@ export class GameApp {
     this.cauldron.render({
       ingredients: state.cauldronIngredients,
       capacity: isMenu ? 0 : settings.maxCauldronIngredients,
+    });
+
+    this.bars.render({
+      values: calculateCauldron(state.cauldronIngredients),
+      recipe: state.activeRecipe,
+      tolerance: settings.tolerance,
     });
 
     this.startButton.hidden = !isMenu;

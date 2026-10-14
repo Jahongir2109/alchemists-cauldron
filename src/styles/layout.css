@@ -59,6 +59,7 @@
     'cauldron'
     'bars'
     'shelf';
+  align-content: start;
   gap: var(--space-4);
   flex: 1;
   transition: filter var(--duration);

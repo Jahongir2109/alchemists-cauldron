@@ -3,6 +3,7 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/shelf.css';
 import './styles/cauldron.css';
+import './styles/bars.css';
 import { GameApp } from './ui/app';
 
 const root: HTMLElement | null = document.querySelector('#app');
