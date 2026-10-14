@@ -4,6 +4,7 @@ import './styles/layout.css';
 import './styles/shelf.css';
 import './styles/cauldron.css';
 import './styles/bars.css';
+import './styles/recipe.css';
 import { GameApp } from './ui/app';
 
 const root: HTMLElement | null = document.querySelector('#app');
