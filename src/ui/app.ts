@@ -20,6 +20,7 @@ import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
 import { createButton, createElement } from './dom';
 import { GameOverView } from './game-over';
+import { HelpView } from './help';
 import { HudView } from './hud';
 import type { IGameLayout } from './layout';
 import { createGameLayout } from './layout';
@@ -59,6 +60,10 @@ export class GameApp {
   private readonly menu: MenuView;
 
   private readonly menuButton: HTMLButtonElement;
+
+  private readonly help: HelpView = new HelpView();
+
+  private readonly helpButton: HTMLButtonElement;
 
   private finishedAt = 0;
 
@@ -127,6 +132,11 @@ export class GameApp {
     });
     this.layout.controlsRight.append(this.pauseButton, this.menuButton);
 
+    this.helpButton = createButton('Help', 'button', () => {
+      this.help.show(getSettings(this.state));
+    });
+    this.layout.controlsLeft.append(this.helpButton);
+
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         this.pauseRun();
@@ -151,6 +161,7 @@ export class GameApp {
     this.gameOver.hide();
     this.pause.hide();
     this.menu.hide();
+    this.help.hide();
   }
 
   private submitScore(name: string): boolean {
@@ -317,6 +328,7 @@ export class GameApp {
     this.pauseButton.hidden = state.status !== 'playing' && state.status !== 'paused';
     this.pauseButton.disabled = state.status !== 'playing';
     this.menuButton.hidden = !isMenu;
+    this.helpButton.hidden = !isMenu;
   }
 
   private renderBrewMessage(settings: IDifficultySettings): void {
