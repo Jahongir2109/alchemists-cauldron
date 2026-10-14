@@ -1,5 +1,6 @@
 import { getShelfIngredients } from '../data/ingredients';
 import { calculateCauldron } from '../logic/calculate-cauldron';
+import { addLeaderboardEntry, isTopScore, normalizePlayerName } from '../logic/leaderboard';
 import { CountdownTimer, secondsToMs } from '../logic/timer';
 import {
   addIngredient,
@@ -13,7 +14,8 @@ import {
   startGame,
   updateTimeLeft,
 } from '../state/game-state';
-import type { IDifficultySettings, IGameState } from '../types/game';
+import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
+import type { IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
 import { createButton, createElement } from './dom';
@@ -21,6 +23,8 @@ import { GameOverView } from './game-over';
 import { HudView } from './hud';
 import type { IGameLayout } from './layout';
 import { createGameLayout } from './layout';
+import { LeaderboardView } from './leaderboard';
+import { MenuView } from './menu';
 import { PauseView } from './pause';
 import { RecipePanelView } from './recipe-panel';
 import { ShelfView } from './shelf';
@@ -50,6 +54,14 @@ export class GameApp {
 
   private readonly pauseButton: HTMLButtonElement;
 
+  private readonly leaderboard: LeaderboardView = new LeaderboardView();
+
+  private readonly menu: MenuView;
+
+  private readonly menuButton: HTMLButtonElement;
+
+  private finishedAt = 0;
+
   private readonly brewMessage: HTMLParagraphElement;
 
   private readonly startButton: HTMLButtonElement;
@@ -71,6 +83,10 @@ export class GameApp {
       onExitToMenu: (): void => {
         this.exitToMenu();
       },
+      onOpenLeaderboard: (): void => {
+        this.leaderboard.show();
+      },
+      onSubmitScore: (name: string): boolean => this.submitScore(name),
     });
 
     this.brewMessage = createElement('p', {
@@ -98,7 +114,18 @@ export class GameApp {
     this.pauseButton = createButton('Pause', 'button', () => {
       this.pauseRun();
     });
-    this.layout.controlsRight.append(this.pauseButton);
+    this.menu = new MenuView({
+      onNewGame: (): void => {
+        this.startNewGame();
+      },
+      onOpenLeaderboard: (): void => {
+        this.leaderboard.show();
+      },
+    });
+    this.menuButton = createButton('Menu', 'button', () => {
+      this.menu.show(this.state.difficulty);
+    });
+    this.layout.controlsRight.append(this.pauseButton, this.menuButton);
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -111,15 +138,35 @@ export class GameApp {
   }
 
   private startNewGame(): void {
-    this.gameOver.hide();
-    this.pause.hide();
+    this.closeDialogs();
     this.setState(startGame(this.state.difficulty));
   }
 
   private exitToMenu(): void {
+    this.closeDialogs();
+    this.setState(createMenuState(this.state.difficulty));
+  }
+
+  private closeDialogs(): void {
     this.gameOver.hide();
     this.pause.hide();
-    this.setState(createMenuState(this.state.difficulty));
+    this.menu.hide();
+  }
+
+  private submitScore(name: string): boolean {
+    const entry: ILeaderboardEntry = {
+      name: normalizePlayerName(name),
+      score: this.state.score,
+      date: this.finishedAt,
+      difficulty: this.state.difficulty,
+    };
+    const isSaved: boolean = saveLeaderboard(addLeaderboardEntry(loadLeaderboard(), entry));
+
+    if (isSaved) {
+      this.leaderboard.show(entry);
+    }
+
+    return isSaved;
   }
 
   private pauseRun(): void {
@@ -171,7 +218,12 @@ export class GameApp {
     this.render();
 
     if (previous.status !== 'game-over' && next.status === 'game-over') {
-      this.gameOver.show(next.score, next.gameOverReason);
+      this.finishedAt = Date.now();
+      this.gameOver.show({
+        score: next.score,
+        reason: next.gameOverReason,
+        isTopScore: isTopScore(loadLeaderboard(), next.score),
+      });
     }
   }
 
@@ -264,6 +316,7 @@ export class GameApp {
     this.brewButton.disabled = !canBrew(state);
     this.pauseButton.hidden = state.status !== 'playing' && state.status !== 'paused';
     this.pauseButton.disabled = state.status !== 'playing';
+    this.menuButton.hidden = !isMenu;
   }
 
   private renderBrewMessage(settings: IDifficultySettings): void {
