@@ -1,0 +1,135 @@
+.hud__bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: linear-gradient(180deg, var(--color-panel-light) 0%, var(--color-panel) 100%);
+  box-shadow: var(--shadow-panel);
+}
+
+.hud__label {
+  margin-right: var(--space-1);
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.hud__value {
+  display: inline-block;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent);
+  text-shadow: var(--glow-accent);
+}
+
+.hud__score {
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.hud__timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 140px;
+}
+
+.hud__timer-row {
+  white-space: nowrap;
+}
+
+.hud__time-bar {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #0a0d08;
+}
+
+.hud__time-fill {
+  width: 100%;
+  height: 100%;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* Less than 15 seconds: red and pulsing */
+.hud__timer.is-danger .hud__value {
+  color: var(--color-danger);
+  text-shadow: 0 0 10px var(--color-danger);
+  animation: timer-pulse 0.8s ease-in-out infinite;
+}
+
+.hud__timer.is-danger .hud__time-fill {
+  background: var(--color-danger);
+}
+
+.hud__lives {
+  display: flex;
+  justify-content: flex-end;
+  justify-self: end;
+  gap: var(--space-1);
+  min-height: 28px;
+}
+
+.hud__life {
+  display: flex;
+}
+
+.hud__heart {
+  display: flex;
+  width: 28px;
+  height: 28px;
+}
+
+.hud__heart svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (width <= 480px) {
+  .hud__bar {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'score lives'
+      'timer timer';
+  }
+
+  .hud__score {
+    grid-area: score;
+  }
+
+  .hud__lives {
+    grid-area: lives;
+  }
+
+  .hud__timer {
+    grid-area: timer;
+  }
+
+  .hud__heart {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@keyframes timer-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(1.12);
+  }
+}
