@@ -1,19 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ILeaderboardEntry } from '../types/game';
+import type { Difficulty, ILeaderboardEntry } from '../types/game';
 import {
   addLeaderboardEntry,
   formatLeaderboardDate,
+  getDifficultyBoard,
   isTopScore,
   isValidPlayerName,
   sortLeaderboard,
 } from './leaderboard';
 
-const entry = (name: string, score: number, date: number): ILeaderboardEntry => ({
+const entry = (
+  name: string,
+  score: number,
+  date: number,
+  difficulty: Difficulty = 'medium',
+): ILeaderboardEntry => ({
   name,
   score,
   date,
-  difficulty: 'medium',
+  difficulty,
 });
 
 const fullBoard: ILeaderboardEntry[] = Array.from({ length: 10 }, (_: unknown, index: number) =>
@@ -57,17 +63,30 @@ describe('leaderboard order', () => {
     expect(board[0]?.name).toBe('new');
     expect(board.some((item) => item.score === 100)).toBe(false);
   });
+
+  it('keeps one Top-10 list per difficulty', () => {
+    const board = addLeaderboardEntry(fullBoard, entry('easy', 50, 99, 'easy'));
+
+    expect(board).toHaveLength(11);
+    expect(getDifficultyBoard(board, 'easy').map((item) => item.name)).toEqual(['easy']);
+    expect(getDifficultyBoard(board, 'medium')).toHaveLength(10);
+    expect(getDifficultyBoard(board, 'hard')).toEqual([]);
+  });
 });
 
 describe('isTopScore', () => {
   it('accepts any positive score while the board has free places', () => {
-    expect(isTopScore([], 200)).toBe(true);
-    expect(isTopScore([], 0)).toBe(false);
+    expect(isTopScore([], 200, 'medium')).toBe(true);
+    expect(isTopScore([], 0, 'medium')).toBe(false);
   });
 
   it('must beat the 10th score on a full board, a tie is not enough', () => {
-    expect(isTopScore(fullBoard, 101)).toBe(true);
-    expect(isTopScore(fullBoard, 100)).toBe(false);
+    expect(isTopScore(fullBoard, 101, 'medium')).toBe(true);
+    expect(isTopScore(fullBoard, 100, 'medium')).toBe(false);
+  });
+
+  it('compares only with the results of the same difficulty', () => {
+    expect(isTopScore(fullBoard, 100, 'hard')).toBe(true);
   });
 });
 

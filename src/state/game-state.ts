@@ -31,6 +31,10 @@ export const createMenuState = (difficulty: Difficulty = DEFAULT_DIFFICULTY): IG
   lastBrewResult: null,
 });
 
+// The difficulty can be changed only on the start screen, never during a run.
+export const selectDifficulty = (state: IGameState, difficulty: Difficulty): IGameState =>
+  state.status === 'menu' && state.difficulty !== difficulty ? createMenuState(difficulty) : state;
+
 export const startGame = (
   difficulty: Difficulty = DEFAULT_DIFFICULTY,
   random: RandomSource = Math.random,

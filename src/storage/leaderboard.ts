@@ -1,16 +1,9 @@
-import { isValidPlayerName, sortLeaderboard } from '../logic/leaderboard';
-import type { Difficulty, ILeaderboardEntry } from '../types/game';
-import { readJson, removeItem, writeJson } from './safe-storage';
+import { isDifficulty } from '../data/difficulty';
+import { isValidPlayerName, trimLeaderboard } from '../logic/leaderboard';
+import type { ILeaderboardEntry } from '../types/game';
+import { isRecord, readJson, removeItem, writeJson } from './safe-storage';
 
 export const LEADERBOARD_KEY = 'alchemists-cauldron:leaderboard';
-
-const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const isDifficulty = (value: unknown): value is Difficulty =>
-  typeof value === 'string' && DIFFICULTIES.some((item: Difficulty) => item === value);
 
 export const isLeaderboardEntry = (value: unknown): value is ILeaderboardEntry =>
   isRecord(value) &&
@@ -31,10 +24,10 @@ export const loadLeaderboard = (): ILeaderboardEntry[] => {
     return [];
   }
 
-  return sortLeaderboard(data.filter((item: unknown) => isLeaderboardEntry(item)));
+  return trimLeaderboard(data.filter((item: unknown) => isLeaderboardEntry(item)));
 };
 
 export const saveLeaderboard = (entries: readonly ILeaderboardEntry[]): boolean =>
-  writeJson(LEADERBOARD_KEY, sortLeaderboard(entries));
+  writeJson(LEADERBOARD_KEY, trimLeaderboard(entries));
 
 export const clearLeaderboard = (): boolean => removeItem(LEADERBOARD_KEY);

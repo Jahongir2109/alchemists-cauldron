@@ -4,6 +4,7 @@ import { createDialogActions, ModalDialog } from './dialogs';
 
 const createRules = (settings: IDifficultySettings): HTMLOListElement => {
   const rules: string[] = [
+    'Open the Menu to choose Easy, Medium or Hard. The difficulty can be changed only before a game starts.',
     'Press Start Game. A random recipe appears with 3 target ranges: Temperature, Density and Magic Power.',
     `Click ingredients on the shelf to add them to the cauldron (up to ${String(settings.maxCauldronIngredients)}). Every ingredient changes the 3 values.`,
     'Every ingredient has a limited stock (the number in the circle). Used ingredients are never returned.',

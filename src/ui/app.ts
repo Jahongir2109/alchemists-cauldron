@@ -11,11 +11,12 @@ import {
   isCauldronFull,
   pauseGame,
   resumeGame,
+  selectDifficulty,
   startGame,
   updateTimeLeft,
 } from '../state/game-state';
 import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
-import type { IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
+import type { Difficulty, IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
 import { createButton, createElement } from './dom';
@@ -89,7 +90,7 @@ export class GameApp {
         this.exitToMenu();
       },
       onOpenLeaderboard: (): void => {
-        this.leaderboard.show();
+        this.leaderboard.show(this.state.difficulty);
       },
       onSubmitScore: (name: string): boolean => this.submitScore(name),
     });
@@ -120,11 +121,14 @@ export class GameApp {
       this.pauseRun();
     });
     this.menu = new MenuView({
+      onSelectDifficulty: (difficulty: Difficulty): void => {
+        this.setState(selectDifficulty(this.state, difficulty));
+      },
       onNewGame: (): void => {
         this.startNewGame();
       },
       onOpenLeaderboard: (): void => {
-        this.leaderboard.show();
+        this.leaderboard.show(this.state.difficulty);
       },
     });
     this.menuButton = createButton('Menu', 'button', () => {
@@ -174,7 +178,7 @@ export class GameApp {
     const isSaved: boolean = saveLeaderboard(addLeaderboardEntry(loadLeaderboard(), entry));
 
     if (isSaved) {
-      this.leaderboard.show(entry);
+      this.leaderboard.show(entry.difficulty, entry);
     }
 
     return isSaved;
@@ -233,7 +237,7 @@ export class GameApp {
       this.gameOver.show({
         score: next.score,
         reason: next.gameOverReason,
-        isTopScore: isTopScore(loadLeaderboard(), next.score),
+        isTopScore: isTopScore(loadLeaderboard(), next.score, next.difficulty),
       });
     }
   }
@@ -309,6 +313,7 @@ export class GameApp {
 
     this.recipe.render({
       recipe: state.activeRecipe,
+      difficulty: state.difficulty,
       added: state.cauldronIngredients.length,
       capacity: settings.maxCauldronIngredients,
       tolerance: settings.tolerance,
