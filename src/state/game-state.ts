@@ -14,6 +14,17 @@ import type {
   IIngredient,
 } from '../types/game';
 
+export type IRestoredGame = Pick<
+  IGameState,
+  | 'difficulty'
+  | 'score'
+  | 'timeLeft'
+  | 'lives'
+  | 'activeRecipe'
+  | 'cauldronIngredients'
+  | 'shelfStock'
+>;
+
 export const getSettings = (state: IGameState): IDifficultySettings =>
   getDifficultySettings(state.difficulty);
 
@@ -27,6 +38,16 @@ export const createMenuState = (difficulty: Difficulty = DEFAULT_DIFFICULTY): IG
   activeRecipe: null,
   cauldronIngredients: [],
   shelfStock: {},
+  gameOverReason: null,
+  lastBrewResult: null,
+});
+
+// Continue Game: the saved run comes back paused, with the saved stock (not re-rolled).
+export const restoreGame = (saved: IRestoredGame): IGameState => ({
+  ...saved,
+  cauldronIngredients: [...saved.cauldronIngredients],
+  shelfStock: { ...saved.shelfStock },
+  status: 'paused',
   gameOverReason: null,
   lastBrewResult: null,
 });
