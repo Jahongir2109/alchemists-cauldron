@@ -12,6 +12,7 @@ const createRules = (settings: IDifficultySettings): HTMLOListElement => {
     'Every ingredient has a limited stock (the number in the circle). Used ingredients are never returned.',
     `Watch the bars. When a value glows green it fits the recipe range ±${String(settings.tolerance)}.`,
     `Press Brew. A correct potion gives +${String(settings.scorePerBrew)} score and +${String(settings.timeBonusSeconds)} s, a wrong one costs 1 life.`,
+    'Pour Out empties a wrong mixture for 10 seconds instead of a life. The poured ingredients are not returned.',
     `You start with ${String(settings.startTimeSeconds)} seconds and ${String(settings.lives)} lives. The game ends when the time is over, the lives are lost or the ingredients run out.`,
     'Pause any time. The game also pauses when you switch to another tab.',
     'An unfinished game is saved automatically. After a reload press Continue Game to go on from the pause screen. Exit to Menu deletes the save.',

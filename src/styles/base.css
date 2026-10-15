@@ -125,6 +125,11 @@ button:disabled {
   font-size: 1.5rem;
 }
 
+.button--large.button--secondary {
+  min-width: 0;
+  font-size: 1.1rem;
+}
+
 .button--danger {
   border-color: var(--color-danger);
 }

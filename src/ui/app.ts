@@ -6,11 +6,14 @@ import {
   addIngredient,
   brew,
   canBrew,
+  canPourOut,
   createMenuState,
   getCauldronValues,
   getSettings,
   isCauldronFull,
   pauseGame,
+  POUR_OUT_PENALTY_SECONDS,
+  pourOut,
   restoreGame,
   resumeGame,
   selectDifficulty,
@@ -86,6 +89,8 @@ export class GameApp {
 
   private readonly continueButton: HTMLButtonElement;
 
+  private readonly pourOutButton: HTMLButtonElement;
+
   private hasSave: boolean;
 
   public constructor(root: HTMLElement) {
@@ -128,7 +133,19 @@ export class GameApp {
     this.continueButton = createButton('Continue Game', 'button button--large', () => {
       this.continueGame();
     });
-    this.layout.centerAction.append(this.startButton, this.continueButton, this.brewButton);
+    this.pourOutButton = createButton(
+      `Pour Out (−${String(POUR_OUT_PENALTY_SECONDS)} s)`,
+      'button button--large button--secondary',
+      () => {
+        this.handlePourOut();
+      },
+    );
+    this.layout.centerAction.append(
+      this.startButton,
+      this.continueButton,
+      this.brewButton,
+      this.pourOutButton,
+    );
 
     this.pause = new PauseView({
       onResume: (): void => {
@@ -246,6 +263,14 @@ export class GameApp {
     }
 
     this.setState(brew(this.syncTime()));
+  }
+
+  private handlePourOut(): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    this.setState(pourOut(this.syncTime()));
   }
 
   // Copies the timestamp-based remaining time into the state before an action changes it.
@@ -396,6 +421,8 @@ export class GameApp {
     this.continueButton.hidden = !isMenu || !this.hasSave;
     this.brewButton.hidden = isMenu;
     this.brewButton.disabled = !canBrew(state);
+    this.pourOutButton.hidden = isMenu;
+    this.pourOutButton.disabled = !canPourOut(state);
     this.pauseButton.hidden = state.status !== 'playing' && state.status !== 'paused';
     this.pauseButton.disabled = state.status !== 'playing';
     this.menuButton.hidden = !isMenu;
