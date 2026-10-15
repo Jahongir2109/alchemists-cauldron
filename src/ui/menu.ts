@@ -5,6 +5,7 @@ import { ModalDialog } from './dialogs';
 
 export interface IMenuActions {
   onSelectDifficulty: (difficulty: Difficulty) => void;
+  onContinue: () => void;
   onNewGame: () => void;
   onOpenLeaderboard: () => void;
 }
@@ -17,16 +18,33 @@ export const describeDifficulty = (settings: IDifficultySettings): string =>
 export class MenuView {
   private readonly dialog: ModalDialog = new ModalDialog('dialog--menu');
 
+  private canContinue = false;
+
   public constructor(private readonly actions: IMenuActions) {}
 
-  public show(difficulty: Difficulty, focusDifficulty = false): void {
+  public show(difficulty: Difficulty, canContinue: boolean, focusDifficulty = false): void {
+    this.canContinue = canContinue;
+
     const difficultyButtons: HTMLButtonElement[] = DIFFICULTIES.map((item: Difficulty) =>
       this.createDifficultyButton(item, item === difficulty),
     );
-    const newGame: HTMLButtonElement = createButton('New Game', 'button button--primary', () => {
-      this.dialog.close();
-      this.actions.onNewGame();
-    });
+    const continueGame: HTMLButtonElement = createButton(
+      'Continue Game',
+      'button button--primary',
+      () => {
+        this.dialog.close();
+        this.actions.onContinue();
+      },
+    );
+    const newGame: HTMLButtonElement = createButton(
+      'New Game',
+      canContinue ? 'button' : 'button button--primary',
+      () => {
+        this.dialog.close();
+        this.actions.onNewGame();
+      },
+    );
+    const actions: HTMLButtonElement[] = canContinue ? [continueGame, newGame] : [newGame];
     const leaderboard: HTMLButtonElement = createButton('Leaderboard', 'button', () => {
       this.actions.onOpenLeaderboard();
     });
@@ -46,7 +64,7 @@ export class MenuView {
           },
           difficultyButtons,
         ),
-        createElement('div', { className: 'menu__list' }, [newGame, leaderboard, close]),
+        createElement('div', { className: 'menu__list' }, [...actions, leaderboard, close]),
       ],
       () => {
         this.dialog.close();
@@ -56,7 +74,9 @@ export class MenuView {
     const selected: HTMLButtonElement | undefined =
       difficultyButtons[DIFFICULTIES.indexOf(difficulty)];
 
-    (focusDifficulty && selected ? selected : newGame).focus();
+    const firstAction: HTMLButtonElement = canContinue ? continueGame : newGame;
+
+    (focusDifficulty && selected ? selected : firstAction).focus();
   }
 
   public hide(): void {
@@ -84,7 +104,7 @@ export class MenuView {
 
     button.addEventListener('click', () => {
       this.actions.onSelectDifficulty(difficulty);
-      this.show(difficulty, true);
+      this.show(difficulty, this.canContinue, true);
     });
 
     return button;
