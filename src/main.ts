@@ -8,6 +8,7 @@ import './styles/recipe.css';
 import './styles/hud.css';
 import './styles/dialogs.css';
 import './styles/leaderboard.css';
+import './styles/effects.css';
 import { GameApp } from './ui/app';
 
 const root: HTMLElement | null = document.querySelector('#app');

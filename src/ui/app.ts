@@ -24,6 +24,7 @@ import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
 import { clearSave, loadGame, saveGame } from '../storage/save';
 import type { ISavedGame } from '../storage/save';
 import type {
+  BrewResult,
   Difficulty,
   IDifficultySettings,
   IGameState,
@@ -32,7 +33,7 @@ import type {
 } from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
-import { createButton, createElement } from './dom';
+import { createButton, createElement, replayAnimation } from './dom';
 import { GameOverView } from './game-over';
 import { HelpView } from './help';
 import { HudView } from './hud';
@@ -267,7 +268,35 @@ export class GameApp {
       return;
     }
 
-    this.setState(brew(this.syncTime()));
+    const next: IGameState = brew(this.syncTime());
+
+    this.setState(next);
+
+    if (next.lastBrewResult) {
+      this.playBrewFeedback(next.lastBrewResult);
+    }
+  }
+
+  private playBrewFeedback(result: BrewResult): void {
+    this.cauldron.playEffect(result);
+
+    if (result === 'failure') {
+      replayAnimation(this.layout.root, 'is-shaking');
+
+      return;
+    }
+
+    // Optional floating "+10s"; it removes itself when its CSS animation ends.
+    const bonus: HTMLSpanElement = createElement('span', {
+      className: 'float-text',
+      text: `+${String(getSettings(this.state).timeBonusSeconds)}s`,
+      attributes: { 'aria-hidden': 'true' },
+    });
+
+    bonus.addEventListener('animationend', () => {
+      bonus.remove();
+    });
+    this.layout.cauldron.append(bonus);
   }
 
   private handlePourOut(): void {
