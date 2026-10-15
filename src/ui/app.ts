@@ -1,5 +1,5 @@
 import { getShelfIngredients } from '../data/ingredients';
-import { calculateCauldron } from '../logic/calculate-cauldron';
+import { findReaction } from '../data/reactions';
 import { addLeaderboardEntry, isTopScore, normalizePlayerName } from '../logic/leaderboard';
 import { CountdownTimer, secondsToMs } from '../logic/timer';
 import {
@@ -7,6 +7,7 @@ import {
   brew,
   canBrew,
   createMenuState,
+  getCauldronValues,
   getSettings,
   isCauldronFull,
   pauseGame,
@@ -19,7 +20,13 @@ import {
 import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
 import { clearSave, loadGame, saveGame } from '../storage/save';
 import type { ISavedGame } from '../storage/save';
-import type { Difficulty, IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
+import type {
+  Difficulty,
+  IDifficultySettings,
+  IGameState,
+  ILeaderboardEntry,
+  IReaction,
+} from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
 import { createButton, createElement } from './dom';
@@ -154,7 +161,7 @@ export class GameApp {
     this.layout.controlsRight.append(this.pauseButton, this.menuButton);
 
     this.helpButton = createButton('Help', 'button', () => {
-      this.help.show(getSettings(this.state));
+      this.help.show(this.state.difficulty);
     });
     this.layout.controlsLeft.append(this.helpButton);
 
@@ -378,7 +385,7 @@ export class GameApp {
     });
 
     this.bars.render({
-      values: calculateCauldron(state.cauldronIngredients),
+      values: getCauldronValues(state),
       recipe: state.activeRecipe,
       tolerance: settings.tolerance,
     });
@@ -410,6 +417,15 @@ export class GameApp {
     if (result === 'failure') {
       this.brewMessage.classList.add('brew-message--failure');
       this.brewMessage.textContent = 'Wrong mixture! You lost 1 life.';
+
+      return;
+    }
+
+    const reaction: IReaction | undefined = findReaction(this.state.lastReactionId ?? '');
+
+    if (reaction) {
+      this.brewMessage.classList.add('brew-message--reaction');
+      this.brewMessage.textContent = `Reaction: ${reaction.name}! ${reaction.description}`;
 
       return;
     }

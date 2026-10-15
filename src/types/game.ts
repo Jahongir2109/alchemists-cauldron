@@ -47,6 +47,25 @@ export interface IDifficultySettings {
 
 export type ShelfStock = Record<string, number>;
 
+export type ReactionDifficulty = Exclude<Difficulty, 'easy'>;
+
+// One-time side effects: they happen only at the moment the reaction fires.
+export interface IReactionEffects {
+  timePenaltySeconds?: number;
+  lifePenalty?: number;
+  clearsCauldron?: boolean;
+}
+
+export interface IReaction {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: ReactionDifficulty;
+  isActive: (ingredients: readonly IIngredient[]) => boolean;
+  apply: (values: ICauldronValues) => ICauldronValues;
+  effects?: IReactionEffects;
+}
+
 export interface IGameState {
   status: GameStatus;
   difficulty: Difficulty;
@@ -58,6 +77,7 @@ export interface IGameState {
   shelfStock: ShelfStock;
   gameOverReason: GameOverReason | null;
   lastBrewResult: BrewResult | null;
+  lastReactionId: string | null;
 }
 
 export interface ILeaderboardEntry {

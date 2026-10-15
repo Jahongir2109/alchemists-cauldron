@@ -1,7 +1,7 @@
 import { DEFAULT_DIFFICULTY, getDifficultySettings } from '../data/difficulty';
 import { findIngredient, getShelfIngredients } from '../data/ingredients';
 import { checkBrew } from '../logic/brew-check';
-import { calculateCauldron } from '../logic/calculate-cauldron';
+import { calculateMixture, getFiredReactions, getReactions } from '../logic/reactions';
 import { pickRecipe } from '../logic/recipe-generator';
 import type { RandomSource } from '../logic/random';
 import { createStock, hasStock, isShelfEmpty, takeFromStock } from '../logic/stock';
@@ -9,9 +9,12 @@ import { addTimeBonus, secondsToMs } from '../logic/timer';
 import type {
   Difficulty,
   GameOverReason,
+  ICauldronValues,
   IDifficultySettings,
   IGameState,
   IIngredient,
+  IReaction,
+  IReactionEffects,
 } from '../types/game';
 
 export type IRestoredGame = Pick<
@@ -40,6 +43,7 @@ export const createMenuState = (difficulty: Difficulty = DEFAULT_DIFFICULTY): IG
   shelfStock: {},
   gameOverReason: null,
   lastBrewResult: null,
+  lastReactionId: null,
 });
 
 // Continue Game: the saved run comes back paused, with the saved stock (not re-rolled).
@@ -50,6 +54,7 @@ export const restoreGame = (saved: IRestoredGame): IGameState => ({
   status: 'paused',
   gameOverReason: null,
   lastBrewResult: null,
+  lastReactionId: null,
 });
 
 // The difficulty can be changed only on the start screen, never during a run.
@@ -73,6 +78,7 @@ export const startGame = (
     shelfStock: createStock(getShelfIngredients(settings.shelfSize), random),
     gameOverReason: null,
     lastBrewResult: null,
+    lastReactionId: null,
   };
 };
 
@@ -93,13 +99,36 @@ export const addIngredient = (state: IGameState, id: string): IGameState => {
     return state;
   }
 
+  const before: IIngredient[] = state.cauldronIngredients;
+  const after: IIngredient[] = [...before, ingredient];
+  const fired: IReaction[] = getFiredReactions(before, after, getReactions(state.difficulty));
+
+  return finishIfOver(
+    fired.reduce<IGameState>(applyReactionEffects, {
+      ...state,
+      cauldronIngredients: after,
+      shelfStock: takeFromStock(state.shelfStock, id),
+      lastBrewResult: null,
+      lastReactionId: fired.at(-1)?.id ?? null,
+    }),
+  );
+};
+
+// One-time effects of a reaction that has just fired.
+const applyReactionEffects = (state: IGameState, reaction: IReaction): IGameState => {
+  const effects: IReactionEffects = reaction.effects ?? {};
+
   return {
     ...state,
-    cauldronIngredients: [...state.cauldronIngredients, ingredient],
-    shelfStock: takeFromStock(state.shelfStock, id),
-    lastBrewResult: null,
+    timeLeft: Math.max(0, state.timeLeft - secondsToMs(effects.timePenaltySeconds ?? 0)),
+    lives: Math.max(0, state.lives - (effects.lifePenalty ?? 0)),
+    cauldronIngredients: effects.clearsCauldron ? [] : state.cauldronIngredients,
   };
 };
+
+// Current cauldron values: base sums with the active reactions of this difficulty.
+export const getCauldronValues = (state: IGameState): ICauldronValues =>
+  calculateMixture(state.cauldronIngredients, getReactions(state.difficulty));
 
 // Lives first, then time, then "Out of ingredients": the shelf and the cauldron are both empty.
 export const getGameOverReason = (state: IGameState): GameOverReason | null => {
@@ -135,12 +164,8 @@ export const brew = (state: IGameState, random: RandomSource = Math.random): IGa
   }
 
   const settings: IDifficultySettings = getSettings(state);
-  const { isSuccess } = checkBrew(
-    calculateCauldron(state.cauldronIngredients),
-    state.activeRecipe,
-    settings.tolerance,
-  );
-  const cleared: IGameState = { ...state, cauldronIngredients: [] };
+  const { isSuccess } = checkBrew(getCauldronValues(state), state.activeRecipe, settings.tolerance);
+  const cleared: IGameState = { ...state, cauldronIngredients: [], lastReactionId: null };
 
   if (!isSuccess) {
     return finishIfOver({
