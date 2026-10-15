@@ -4,6 +4,8 @@ import { createElement } from './dom';
 import { formatSigned } from './format';
 import { createIcon } from './icons';
 
+export const INGREDIENT_DRAG_TYPE = 'application/x-alchemy-ingredient';
+
 interface IShelfCard {
   ingredient: IIngredient;
   button: HTMLButtonElement;
@@ -88,6 +90,24 @@ export class ShelfView {
       this.onAdd(ingredient.id);
     });
 
+    // Drag & drop: the ingredient id travels in dataTransfer.
+    button.addEventListener('dragstart', (event: DragEvent) => {
+      if (button.disabled || !event.dataTransfer) {
+        event.preventDefault();
+
+        return;
+      }
+
+      event.dataTransfer.setData(INGREDIENT_DRAG_TYPE, ingredient.id);
+      event.dataTransfer.setData('text/plain', ingredient.id);
+      event.dataTransfer.effectAllowed = 'copy';
+      button.classList.add('is-dragging');
+    });
+
+    button.addEventListener('dragend', () => {
+      button.classList.remove('is-dragging');
+    });
+
     return { ingredient, button, badge };
   }
 
@@ -96,6 +116,8 @@ export class ShelfView {
 
     card.badge.textContent = String(stock);
     card.button.disabled = isEmpty || isBlocked;
+    // An empty ingredient (stock 0) can never be dragged.
+    card.button.draggable = !card.button.disabled;
     card.button.classList.toggle('is-empty', isEmpty);
     card.button.setAttribute(
       'aria-label',

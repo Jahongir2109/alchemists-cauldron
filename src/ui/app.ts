@@ -102,7 +102,12 @@ export class GameApp {
     this.shelf = new ShelfView(this.layout.shelf, (id: string) => {
       this.handleAddIngredient(id);
     });
-    this.cauldron = new CauldronView(this.layout.cauldron);
+    this.cauldron = new CauldronView(this.layout.cauldron, {
+      canDrop: (): boolean => this.state.status === 'playing' && !isCauldronFull(this.state),
+      onDrop: (id: string): void => {
+        this.handleAddIngredient(id);
+      },
+    });
     this.recipe = new RecipePanelView(this.layout.recipe);
     this.bars = new BarsView(this.layout.bars);
     this.gameOver = new GameOverView({
