@@ -8,6 +8,22 @@
   padding: var(--space-3);
 }
 
+.cauldron {
+  border: 2px dashed transparent;
+  border-radius: var(--radius-large);
+  transition:
+    border-color var(--duration-fast),
+    background-color var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+/* Drop zone highlight while a valid ingredient is dragged over the cauldron */
+.cauldron.is-drop-target {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent-soft);
+  box-shadow: inset 0 0 30px rgb(125 255 79 / 30%);
+}
+
 .cauldron__pot {
   position: relative;
   width: min(100%, 300px);
