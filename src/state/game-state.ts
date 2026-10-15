@@ -157,6 +157,31 @@ export const finishIfOver = (state: IGameState): IGameState => {
   return reason ? { ...state, status: 'game-over', gameOverReason: reason } : state;
 };
 
+// The ingredients in the cauldron are spent: they never go back to the shelf.
+const clearCauldron = (state: IGameState): IGameState => ({
+  ...state,
+  cauldronIngredients: [],
+  lastReactionId: null,
+});
+
+export const POUR_OUT_PENALTY_SECONDS = 10;
+
+export const canPourOut = (state: IGameState): boolean =>
+  state.status === 'playing' && state.cauldronIngredients.length > 0;
+
+// Pour Out: clears a wrong mixture for 10 seconds instead of a life.
+export const pourOut = (state: IGameState): IGameState => {
+  if (!canPourOut(state)) {
+    return state;
+  }
+
+  return finishIfOver({
+    ...clearCauldron(state),
+    timeLeft: Math.max(0, state.timeLeft - secondsToMs(POUR_OUT_PENALTY_SECONDS)),
+    lastBrewResult: null,
+  });
+};
+
 // Used ingredients are always spent: the cauldron is cleared and the stock is not refilled.
 export const brew = (state: IGameState, random: RandomSource = Math.random): IGameState => {
   if (!canBrew(state) || !state.activeRecipe) {
@@ -165,7 +190,7 @@ export const brew = (state: IGameState, random: RandomSource = Math.random): IGa
 
   const settings: IDifficultySettings = getSettings(state);
   const { isSuccess } = checkBrew(getCauldronValues(state), state.activeRecipe, settings.tolerance);
-  const cleared: IGameState = { ...state, cauldronIngredients: [], lastReactionId: null };
+  const cleared: IGameState = clearCauldron(state);
 
   if (!isSuccess) {
     return finishIfOver({
