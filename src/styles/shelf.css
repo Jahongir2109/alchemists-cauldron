@@ -58,6 +58,15 @@
   transform: translateY(1px);
 }
 
+.ingredient[draggable='true'] {
+  cursor: grab;
+}
+
+.ingredient.is-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
 .ingredient:disabled {
   opacity: 0.65;
 }
