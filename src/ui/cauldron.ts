@@ -1,5 +1,5 @@
-import type { IIngredient } from '../types/game';
-import { createElement } from './dom';
+import type { BrewResult, IIngredient } from '../types/game';
+import { createElement, replayAnimation } from './dom';
 import { createIcon } from './icons';
 import { INGREDIENT_DRAG_TYPE } from './shelf';
 
@@ -13,11 +13,22 @@ export interface ICauldronDropZone {
   onDrop: (id: string) => void;
 }
 
+const EFFECT_CLASSES: Readonly<Record<BrewResult, string>> = {
+  success: 'is-success',
+  failure: 'is-failure',
+};
+
 const isIngredientDrag = (event: DragEvent): boolean =>
   event.dataTransfer?.types.includes(INGREDIENT_DRAG_TYPE) ?? false;
 
 export class CauldronView {
   private readonly list: HTMLOListElement;
+
+  private readonly pot: HTMLDivElement;
+
+  private readonly floating: HTMLDivElement;
+
+  private floatingKey = '';
 
   public constructor(
     private readonly container: HTMLElement,
@@ -25,9 +36,15 @@ export class CauldronView {
   ) {
     this.listenToDrops();
 
-    const pot: HTMLDivElement = createElement('div', { className: 'cauldron__pot' }, [
+    this.floating = createElement('div', {
+      className: 'cauldron__floating',
+      attributes: { 'aria-hidden': 'true' },
+    });
+    this.pot = createElement('div', { className: 'cauldron__pot' }, [
       createElement('div', { className: 'cauldron__steam' }),
       createElement('div', { className: 'cauldron__rim' }),
+      this.floating,
+      createElement('div', { className: 'cauldron__burst', attributes: { 'aria-hidden': 'true' } }),
       createElement('div', { className: 'cauldron__body' }, [
         createElement('div', { className: 'cauldron__liquid' }),
         createElement('span', { className: 'cauldron__bubble cauldron__bubble--1' }),
@@ -42,7 +59,13 @@ export class CauldronView {
       attributes: { 'aria-label': 'Ingredients in the cauldron', 'aria-live': 'polite' },
     });
 
-    container.append(pot, this.list);
+    container.append(this.pot, this.list);
+  }
+
+  // Success glow or failure explosion; the timing lives in CSS only.
+  public playEffect(result: BrewResult): void {
+    this.pot.classList.remove(EFFECT_CLASSES[result === 'success' ? 'failure' : 'success']);
+    replayAnimation(this.pot, EFFECT_CLASSES[result]);
   }
 
   // Only a valid drag (an ingredient while the game runs and the cauldron has room) is accepted.
@@ -103,5 +126,28 @@ export class CauldronView {
     );
 
     this.list.replaceChildren(...items, ...emptySlots);
+    this.renderFloating(view.ingredients);
+  }
+
+  // Ingredient icons float on the potion; rebuilt only when the mixture changes,
+  // so the running CSS animations are not restarted on every render.
+  private renderFloating(ingredients: readonly IIngredient[]): void {
+    const key: string = ingredients.map((ingredient: IIngredient) => ingredient.id).join('|');
+
+    if (key === this.floatingKey) {
+      return;
+    }
+
+    this.floatingKey = key;
+    this.floating.replaceChildren(
+      ...ingredients.map((ingredient: IIngredient, index: number) => {
+        const icon: HTMLSpanElement = createIcon(ingredient.icon, 'cauldron__float');
+
+        icon.style.setProperty('--index', String(index));
+        icon.style.setProperty('--count', String(ingredients.length));
+
+        return icon;
+      }),
+    );
   }
 }

@@ -1,0 +1,202 @@
+/* Visual feedback (Level 3). All timing lives here, in CSS animations. */
+
+.cauldron {
+  position: relative;
+}
+
+/* Ingredient icons floating on the potion */
+
+.cauldron__floating {
+  position: absolute;
+  top: 24%;
+  left: 14%;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 6px;
+  width: 72%;
+  height: 20%;
+  pointer-events: none;
+}
+
+.cauldron__float {
+  display: flex;
+  width: clamp(22px, 9%, 34px);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0 6px rgb(125 255 79 / 70%));
+  animation: float 3s ease-in-out infinite;
+  animation-delay: calc(var(--index, 0) * -0.7s);
+}
+
+.cauldron__float svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Success and failure */
+
+.cauldron__burst {
+  position: absolute;
+  inset: 8% 4% 30%;
+  z-index: 4;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cauldron__pot.is-success {
+  animation: success-pop 900ms ease-out;
+}
+
+.cauldron__pot.is-success .cauldron__burst {
+  background: radial-gradient(
+    circle,
+    rgb(255 245 180 / 95%) 0%,
+    rgb(125 255 79 / 70%) 35%,
+    rgb(125 255 79 / 0%) 70%
+  );
+  animation: success-burst 900ms ease-out;
+}
+
+.cauldron__pot.is-failure {
+  animation: failure-jolt 700ms ease-out;
+}
+
+.cauldron__pot.is-failure .cauldron__burst {
+  background: radial-gradient(
+    circle,
+    rgb(255 236 160 / 95%) 0%,
+    rgb(255 120 40 / 85%) 30%,
+    rgb(160 20 10 / 60%) 55%,
+    rgb(40 10 5 / 0%) 72%
+  );
+  animation: explosion 700ms ease-out;
+}
+
+.game.is-shaking {
+  animation: screen-shake 450ms ease-in-out;
+}
+
+/* Optional floating time bonus after a correct potion */
+
+.float-text {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  z-index: 5;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #dcffc9;
+  text-shadow: var(--glow-accent);
+  pointer-events: none;
+  animation: float-up 1200ms ease-out forwards;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-8deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(8deg);
+  }
+}
+
+@keyframes success-pop {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: none;
+  }
+
+  35% {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 24px rgb(125 255 79 / 90%));
+  }
+}
+
+@keyframes success-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes failure-jolt {
+  0%,
+  100% {
+    transform: none;
+    filter: none;
+  }
+
+  20% {
+    transform: scale(1.08) rotate(-3deg);
+    filter: drop-shadow(0 0 28px rgb(255 90 40 / 90%));
+  }
+
+  45% {
+    transform: scale(0.97) rotate(2deg);
+  }
+}
+
+@keyframes explosion {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+@keyframes screen-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  15%,
+  55% {
+    transform: translateX(-8px);
+  }
+
+  35%,
+  75% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.8);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60px) scale(1.1);
+  }
+}
