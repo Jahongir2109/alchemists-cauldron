@@ -9,6 +9,7 @@ import {
   finishIfOver,
   pauseGame,
   resumeGame,
+  selectDifficulty,
   startGame,
   updateTimeLeft,
 } from './game-state';
@@ -42,6 +43,58 @@ describe('game state', () => {
     expect(state.lives).toBe(3);
     expect(Object.keys(state.shelfStock)).toHaveLength(6);
     expect(state.activeRecipe?.difficulty).toBe('medium');
+  });
+
+  it('starts an Easy game with 180 s, 5 lives, the first 4 ingredients and an easy recipe', () => {
+    const state = startGame('easy');
+
+    expect(state.difficulty).toBe('easy');
+    expect(state.timeLeft).toBe(180_000);
+    expect(state.lives).toBe(5);
+    expect(Object.keys(state.shelfStock)).toEqual([
+      'dragon-tears',
+      'fairy-dust',
+      'frost-lotus',
+      'mandrake-root',
+    ]);
+    expect(state.activeRecipe?.difficulty).toBe('easy');
+  });
+
+  it('starts a Hard game with 150 s, 3 lives, all 8 ingredients and a hard recipe', () => {
+    const state = startGame('hard');
+
+    expect(state.timeLeft).toBe(150_000);
+    expect(state.lives).toBe(3);
+    expect(Object.keys(state.shelfStock)).toHaveLength(8);
+    expect(state.activeRecipe?.difficulty).toBe('hard');
+  });
+
+  it('gives every shelf ingredient a random stock from 2 to 15', () => {
+    const stock: number[] = Object.values(startGame('hard').shelfStock);
+
+    expect(stock.every((portions: number) => portions >= 2 && portions <= 15)).toBe(true);
+  });
+
+  it('changes the difficulty only on the start screen', () => {
+    const menu = selectDifficulty(createMenuState('medium'), 'hard');
+
+    expect(menu.difficulty).toBe('hard');
+    expect(menu.status).toBe('menu');
+
+    const running = startGame('easy');
+
+    expect(selectDifficulty(running, 'hard')).toBe(running);
+    expect(selectDifficulty(pauseGame(running), 'hard').difficulty).toBe('easy');
+  });
+
+  it('allows 5 ingredients in the cauldron on Hard', () => {
+    let state: IGameState = { ...startGame('hard'), shelfStock: { 'toad-slime': 9 } };
+
+    for (let step = 0; step < 6; step += 1) {
+      state = addIngredient(state, 'toad-slime');
+    }
+
+    expect(state.cauldronIngredients).toHaveLength(5);
   });
 
   it('adds ingredients in order and spends the stock', () => {

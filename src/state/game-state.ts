@@ -14,6 +14,17 @@ import type {
   IIngredient,
 } from '../types/game';
 
+export type IRestoredGame = Pick<
+  IGameState,
+  | 'difficulty'
+  | 'score'
+  | 'timeLeft'
+  | 'lives'
+  | 'activeRecipe'
+  | 'cauldronIngredients'
+  | 'shelfStock'
+>;
+
 export const getSettings = (state: IGameState): IDifficultySettings =>
   getDifficultySettings(state.difficulty);
 
@@ -30,6 +41,20 @@ export const createMenuState = (difficulty: Difficulty = DEFAULT_DIFFICULTY): IG
   gameOverReason: null,
   lastBrewResult: null,
 });
+
+// Continue Game: the saved run comes back paused, with the saved stock (not re-rolled).
+export const restoreGame = (saved: IRestoredGame): IGameState => ({
+  ...saved,
+  cauldronIngredients: [...saved.cauldronIngredients],
+  shelfStock: { ...saved.shelfStock },
+  status: 'paused',
+  gameOverReason: null,
+  lastBrewResult: null,
+});
+
+// The difficulty can be changed only on the start screen, never during a run.
+export const selectDifficulty = (state: IGameState, difficulty: Difficulty): IGameState =>
+  state.status === 'menu' && state.difficulty !== difficulty ? createMenuState(difficulty) : state;
 
 export const startGame = (
   difficulty: Difficulty = DEFAULT_DIFFICULTY,

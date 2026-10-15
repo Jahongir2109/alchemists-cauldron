@@ -1,11 +1,12 @@
-import { formatLeaderboardDate } from '../logic/leaderboard';
+import { DIFFICULTIES, DIFFICULTY_LABELS } from '../data/difficulty';
+import { formatLeaderboardDate, getDifficultyBoard } from '../logic/leaderboard';
 import { clearLeaderboard, loadLeaderboard } from '../storage/leaderboard';
-import type { ILeaderboardEntry } from '../types/game';
+import type { Difficulty, ILeaderboardEntry } from '../types/game';
 import { ConfirmDialog } from './confirm';
 import { createButton, createElement } from './dom';
 import { createDialogActions, ModalDialog } from './dialogs';
 
-const COLUMNS: readonly string[] = ['#', 'Name', 'Score', 'Date'];
+const COLUMNS: readonly string[] = ['#', 'Name', 'Score', 'Difficulty', 'Date'];
 
 const createTable = (
   entries: readonly ILeaderboardEntry[],
@@ -46,6 +47,10 @@ const createTable = (
           createElement('td', { className: 'leaderboard__name', text: entry.name }),
           createElement('td', { className: 'leaderboard__score', text: String(entry.score) }),
           createElement('td', {
+            className: 'leaderboard__difficulty',
+            text: DIFFICULTY_LABELS[entry.difficulty],
+          }),
+          createElement('td', {
             className: 'leaderboard__date',
             text: formatLeaderboardDate(entry.date),
           }),
@@ -66,43 +71,16 @@ export class LeaderboardView {
 
   private onClose: (() => void) | null = null;
 
+  private highlight: ILeaderboardEntry | null = null;
+
   public show(
+    difficulty: Difficulty,
     highlight: ILeaderboardEntry | null = null,
     onClose: (() => void) | null = null,
   ): void {
     this.onClose = onClose;
-
-    const entries: ILeaderboardEntry[] = loadLeaderboard();
-    const close: HTMLButtonElement = createButton('Close', 'button button--primary', () => {
-      this.hide();
-    });
-    const clear: HTMLButtonElement = createButton(
-      'Clear Leaderboard',
-      'button button--danger',
-      () => {
-        this.confirm.ask({
-          title: 'Clear leaderboard?',
-          message: 'All Top-10 results will be deleted. This cannot be undone.',
-          confirmText: 'Clear',
-          onConfirm: (): void => {
-            clearLeaderboard();
-            this.show(null, this.onClose);
-          },
-        });
-      },
-    );
-
-    clear.disabled = entries.length === 0;
-
-    this.dialog.open(
-      'Top-10 Alchemists',
-      [createTable(entries, highlight), createDialogActions([close, clear])],
-      () => {
-        this.hide();
-      },
-    );
-
-    close.focus();
+    this.highlight = highlight;
+    this.render(difficulty);
   }
 
   public hide(): void {
@@ -112,5 +90,66 @@ export class LeaderboardView {
 
     this.onClose = null;
     callback?.();
+  }
+
+  private render(difficulty: Difficulty, focusTab = false): void {
+    const all: ILeaderboardEntry[] = loadLeaderboard();
+    const entries: ILeaderboardEntry[] = getDifficultyBoard(all, difficulty);
+    const tabs: HTMLButtonElement[] = DIFFICULTIES.map((item: Difficulty) => {
+      const tab: HTMLButtonElement = createButton(
+        DIFFICULTY_LABELS[item],
+        item === difficulty ? 'button leaderboard__tab is-active' : 'button leaderboard__tab',
+        () => {
+          this.render(item, true);
+        },
+      );
+
+      tab.setAttribute('aria-pressed', String(item === difficulty));
+
+      return tab;
+    });
+    const close: HTMLButtonElement = createButton('Close', 'button button--primary', () => {
+      this.hide();
+    });
+    const clear: HTMLButtonElement = createButton(
+      'Clear Leaderboard',
+      'button button--danger',
+      () => {
+        this.confirm.ask({
+          title: 'Clear leaderboard?',
+          message: 'All Top-10 results of every difficulty will be deleted. This cannot be undone.',
+          confirmText: 'Clear',
+          onConfirm: (): void => {
+            clearLeaderboard();
+            this.render(difficulty);
+          },
+        });
+      },
+    );
+
+    clear.disabled = all.length === 0;
+
+    this.dialog.open(
+      'Top-10 Alchemists',
+      [
+        createElement(
+          'div',
+          {
+            className: 'leaderboard__tabs',
+            attributes: { role: 'group', 'aria-label': 'Difficulty' },
+          },
+          tabs,
+        ),
+        createTable(entries, this.highlight),
+        createDialogActions([close, clear]),
+      ],
+      () => {
+        this.hide();
+      },
+    );
+
+    const activeTab: HTMLButtonElement | undefined = tabs[DIFFICULTIES.indexOf(difficulty)];
+
+    (focusTab && activeTab ? activeTab : close).focus();
   }
 }
