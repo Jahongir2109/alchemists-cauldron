@@ -30,6 +30,31 @@ export const createElement = <K extends keyof HTMLElementTagNameMap>(
   return element;
 };
 
+// Plays a CSS animation class again and removes it when the element's own animation ends.
+// The timing lives in CSS: no timers are used for visual effects.
+export const replayAnimation = (element: HTMLElement, className: string): void => {
+  const onEnd = (event: AnimationEvent): void => {
+    if (event.target === element) {
+      element.classList.remove(className);
+      element.removeEventListener('animationend', onEnd);
+    }
+  };
+
+  element.addEventListener('animationend', onEnd);
+
+  if (!element.classList.contains(className)) {
+    element.classList.add(className);
+
+    return;
+  }
+
+  // The class is still on: start its running CSS animations from the beginning.
+  for (const animation of element.getAnimations({ subtree: true })) {
+    animation.cancel();
+    animation.play();
+  }
+};
+
 export const createButton = (
   text: string,
   className: string,
