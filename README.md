@@ -24,11 +24,38 @@ Task description:
 | Level 1 — Basic  | US 1.4 Timer & Game Over                 | ✅ Done |
 | Level 1 — Basic  | US 1.5 Pause                             | ✅ Done |
 | Level 1 — Basic  | US 1.6 Leaderboard (Top-10)              | ✅ Done |
-| Level 2 — Extend | US 2.1 – US 2.2                          | Planned |
+| Level 2 — Extend | US 2.1 Difficulty Selection              | ✅ Done |
+| Level 2 — Extend | US 2.2 Auto-save & Continue Game         | ✅ Done |
 | Level 3 — Full   | US 3.1 – US 3.6                          | Planned |
 
-Level 1 always plays with the **Medium** rules: 6 ingredients on the shelf, up to 4 in the cauldron,
-150 seconds, 3 lives, tolerance ±8, +200 score and +10 s per correct potion.
+### Difficulty
+
+| Setting                     | Easy  | Medium | Hard  |
+| --------------------------- | :---: | :----: | :---: |
+| Ingredients on shelf        |   4   |   6    |   8   |
+| Max ingredients in cauldron |   4   |   4    |   5   |
+| Starting time               | 180 s | 150 s  | 150 s |
+| Recipe tolerance            |  ±12  |   ±8   |  ±5   |
+| Lives                       |   5   |   3    |   3   |
+| Score per brew              |  100  |  200   |  300  |
+| Time bonus per brew         | +15 s | +10 s  | +5 s  |
+
+**Medium** is the default and matches the full Level 1 rule set.
+
+### Level 2
+
+- **Difficulty selection** — the **Menu** on the start screen has **Easy**, **Medium** and **Hard**
+  buttons with a short summary built from the same `DIFFICULTY_SETTINGS` object. The difficulty sets
+  the shelf, cauldron limit, time, tolerance, lives, score, time bonus and the recipe rows. It cannot
+  be changed during a run.
+- **Leaderboard per difficulty** — one Top-10 list per difficulty, tabs for each list and a
+  **Difficulty** column.
+- **Auto-save** — `difficulty`, `score`, `timeLeft`, `lives`, `activeRecipe`,
+  `cauldronIngredients`, `shelfStock` and `status` are saved after every change, on pause and when
+  the page is closed.
+- **Continue Game** — shown only when a valid unfinished save exists. It restores the saved stock
+  (not re-rolled) and opens the game paused. Finished games and **Exit to Menu** delete the save, a
+  new game overwrites it. Broken or edited data is validated, deleted and never crashes the game.
 
 ### Features
 
@@ -58,15 +85,17 @@ Level 1 always plays with the **Medium** rules: 6 ingredients on the shelf, up t
 
 ## How to play
 
-1. Press **Start Game**. A recipe with 3 target ranges appears on the right.
-2. Click ingredients on the shelf. Every ingredient adds its 3 values to the cauldron and uses 1
+1. Open **Menu** and choose the difficulty (Medium by default).
+2. Press **Start Game**. A recipe with 3 target ranges appears on the right.
+3. Click ingredients on the shelf. Every ingredient adds its 3 values to the cauldron and uses 1
    portion of its stock.
-3. Watch the bars: the green zone is the recipe range, the dashed zone is the range with tolerance.
+4. Watch the bars: the green zone is the recipe range, the dashed zone is the range with tolerance.
    A bar glows green when its value fits.
-4. Press **Brew** when all 3 bars glow. Wrong mixtures cost a life, so plan the order of
+5. Press **Brew** when all 3 bars glow. Wrong mixtures cost a life, so plan the order of
    ingredients — the stock is limited and never refilled.
-5. Use **Pause** any time. Switching to another tab pauses the game automatically.
-6. Make the best score before the time, the lives or the ingredients run out, and enter your name
+6. Use **Pause** any time. Switching to another tab pauses the game automatically. After a reload,
+   **Continue Game** brings the unfinished run back.
+7. Make the best score before the time, the lives or the ingredients run out, and enter your name
    in the Top-10.
 
 ## How to run
@@ -94,7 +123,7 @@ Git hooks (Husky):
 - `commit-msg` — commitlint checks the RS School commit message format
 - `pre-push` — `npm run lint` and `npm run format:check`; a failed check blocks the push
 
-Every push to `story-1` is built and deployed to GitHub Pages by GitHub Actions.
+Every push to a story branch (`story-1`, `story-2`, `story-3`) is built and deployed to GitHub Pages by GitHub Actions.
 
 ## Project structure
 
@@ -107,7 +136,7 @@ src/
   data/          fixed tables: ingredients, recipes, difficulty settings, bar scales
   logic/         pure rules: cauldron sums, stock, recipe picking, brew check, timer, Top-10
   state/         the game state object and the pure actions that change it
-  storage/       safe localStorage helpers and the leaderboard storage
+  storage/       safe localStorage helpers, the leaderboard and the game save
   styles/        CSS (variables, layout, components, animations)
   types/         shared TypeScript types and interfaces
   ui/            DOM rendering, dialogs and event handling
