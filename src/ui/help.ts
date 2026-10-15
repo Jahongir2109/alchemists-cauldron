@@ -3,6 +3,7 @@ import { getReactions } from '../logic/reactions';
 import type { Difficulty, IDifficultySettings, IReaction } from '../types/game';
 import { createButton, createElement } from './dom';
 import { createDialogActions, ModalDialog } from './dialogs';
+import { SHORTCUT_HINTS } from './keyboard';
 
 const createRules = (settings: IDifficultySettings): HTMLOListElement => {
   const rules: string[] = [
@@ -15,6 +16,7 @@ const createRules = (settings: IDifficultySettings): HTMLOListElement => {
     'Pour Out empties a wrong mixture for 10 seconds instead of a life. The poured ingredients are not returned.',
     `You start with ${String(settings.startTimeSeconds)} seconds and ${String(settings.lives)} lives. The game ends when the time is over, the lives are lost or the ingredients run out.`,
     'Pause any time. The game also pauses when you switch to another tab.',
+    `Keyboard during play: ${SHORTCUT_HINTS.join('; ')}.`,
     'An unfinished game is saved automatically. After a reload press Continue Game to go on from the pause screen. Exit to Menu deletes the save.',
   ];
 

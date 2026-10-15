@@ -102,7 +102,9 @@ export class ShelfView {
   }
 
   private build(ingredients: readonly IIngredient[]): void {
-    this.cards = ingredients.map((ingredient: IIngredient) => this.createCard(ingredient));
+    this.cards = ingredients.map((ingredient: IIngredient, index: number) =>
+      this.createCard(ingredient, String(index + 1)),
+    );
     this.list.replaceChildren(
       ...this.cards.map((card: IShelfCard) => {
         const item: HTMLLIElement = createElement('li', { className: 'shelf__item' }, [
@@ -122,7 +124,7 @@ export class ShelfView {
     );
   }
 
-  private createCard(ingredient: IIngredient): IShelfCard {
+  private createCard(ingredient: IIngredient, shortcut: string): IShelfCard {
     const badge: HTMLSpanElement = createElement('span', { className: 'ingredient__stock' });
     const tooltip: HTMLDivElement = createTooltip(ingredient);
     const button: HTMLButtonElement = createElement(
@@ -133,9 +135,15 @@ export class ShelfView {
           type: 'button',
           'data-id': ingredient.id,
           'aria-describedby': tooltip.id,
+          'aria-keyshortcuts': shortcut,
         },
       },
       [
+        createElement('kbd', {
+          className: 'ingredient__key',
+          text: shortcut,
+          attributes: { 'aria-hidden': 'true' },
+        }),
         createIcon(ingredient.icon, 'ingredient__icon'),
         createElement('span', { className: 'ingredient__name', text: ingredient.name }),
         badge,

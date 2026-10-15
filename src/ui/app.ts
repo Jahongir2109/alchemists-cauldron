@@ -26,8 +26,10 @@ import type { ISavedGame } from '../storage/save';
 import type {
   BrewResult,
   Difficulty,
+  GameStatus,
   IDifficultySettings,
   IGameState,
+  IIngredient,
   ILeaderboardEntry,
   IReaction,
 } from '../types/game';
@@ -39,6 +41,7 @@ import { HelpView } from './help';
 import { HudView } from './hud';
 import type { IGameLayout } from './layout';
 import { createGameLayout } from './layout';
+import { listenToShortcuts } from './keyboard';
 import { LeaderboardView } from './leaderboard';
 import { MenuView } from './menu';
 import { PauseView } from './pause';
@@ -193,6 +196,31 @@ export class GameApp {
         this.pauseRun();
       }
     });
+
+    listenToShortcuts({
+      getStatus: (): GameStatus => this.state.status,
+      onAddIngredient: (shelfIndex: number): void => {
+        const ingredient: IIngredient | undefined = getShelfIngredients(
+          getSettings(this.state).shelfSize,
+        )[shelfIndex];
+
+        if (ingredient) {
+          this.handleAddIngredient(ingredient.id);
+        }
+      },
+      onBrew: (): void => {
+        this.handleBrew();
+      },
+      onPourOut: (): void => {
+        this.handlePourOut();
+      },
+      onPause: (): void => {
+        this.pauseRun();
+      },
+    });
+    this.brewButton.setAttribute('aria-keyshortcuts', 'B');
+    this.pourOutButton.setAttribute('aria-keyshortcuts', 'O');
+    this.pauseButton.setAttribute('aria-keyshortcuts', 'P Escape');
 
     // Reload or close: keep the exact remaining time in the save.
     window.addEventListener('pagehide', () => {
