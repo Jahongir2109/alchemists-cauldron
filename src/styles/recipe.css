@@ -117,3 +117,8 @@
 .brew-message--failure {
   color: var(--color-danger);
 }
+
+.brew-message--reaction {
+  color: var(--color-magic);
+  text-shadow: 0 0 10px rgb(183 123 255 / 55%);
+}
