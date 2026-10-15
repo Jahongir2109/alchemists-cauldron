@@ -8,7 +8,7 @@ const createRules = (settings: IDifficultySettings): HTMLOListElement => {
   const rules: string[] = [
     'Open the Menu to choose Easy, Medium or Hard. The difficulty can be changed only before a game starts.',
     'Press Start Game. A random recipe appears with 3 target ranges: Temperature, Density and Magic Power.',
-    `Click ingredients on the shelf or drag them into the cauldron to add them to the cauldron (up to ${String(settings.maxCauldronIngredients)}). Every ingredient changes the 3 values.`,
+    `Click ingredients on the shelf or drag them into the cauldron to add them to the cauldron (up to ${String(settings.maxCauldronIngredients)}). Every ingredient changes the 3 values: hover or focus a card to see them.`,
     'Every ingredient has a limited stock (the number in the circle). Used ingredients are never returned.',
     `Watch the bars. When a value glows green it fits the recipe range ±${String(settings.tolerance)}.`,
     `Press Brew. A correct potion gives +${String(settings.scorePerBrew)} score and +${String(settings.timeBonusSeconds)} s, a wrong one costs 1 life.`,
