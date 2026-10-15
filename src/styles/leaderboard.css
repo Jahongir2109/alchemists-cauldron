@@ -2,6 +2,29 @@
   width: min(100% - 32px, 620px);
 }
 
+.leaderboard__tabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.leaderboard__tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: var(--space-2);
+}
+
+.leaderboard__tab.is-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: #dcffc9;
+}
+
+.leaderboard__difficulty {
+  font-size: 0.85rem;
+  color: var(--color-gold);
+}
+
 .leaderboard__scroll {
   max-height: 55vh;
   overflow: auto;

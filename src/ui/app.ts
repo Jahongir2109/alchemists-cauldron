@@ -89,7 +89,7 @@ export class GameApp {
         this.exitToMenu();
       },
       onOpenLeaderboard: (): void => {
-        this.leaderboard.show();
+        this.leaderboard.show(this.state.difficulty);
       },
       onSubmitScore: (name: string): boolean => this.submitScore(name),
     });
@@ -124,7 +124,7 @@ export class GameApp {
         this.startNewGame();
       },
       onOpenLeaderboard: (): void => {
-        this.leaderboard.show();
+        this.leaderboard.show(this.state.difficulty);
       },
     });
     this.menuButton = createButton('Menu', 'button', () => {
@@ -174,7 +174,7 @@ export class GameApp {
     const isSaved: boolean = saveLeaderboard(addLeaderboardEntry(loadLeaderboard(), entry));
 
     if (isSaved) {
-      this.leaderboard.show(entry);
+      this.leaderboard.show(entry.difficulty, entry);
     }
 
     return isSaved;

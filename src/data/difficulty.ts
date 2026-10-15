@@ -37,6 +37,11 @@ export const DIFFICULTY_SETTINGS: Readonly<Record<Difficulty, IDifficultySetting
 // Level 1 always plays with the Medium rules.
 export const DEFAULT_DIFFICULTY: Difficulty = 'medium';
 
+export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
+
+export const isDifficulty = (value: unknown): value is Difficulty =>
+  typeof value === 'string' && DIFFICULTIES.some((item: Difficulty) => item === value);
+
 export const DIFFICULTY_LABELS: Readonly<Record<Difficulty, string>> = {
   easy: 'Easy',
   medium: 'Medium',
