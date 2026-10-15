@@ -1,12 +1,14 @@
 import { BARS } from '../data/bars';
 import type { IBarConfig } from '../data/bars';
-import type { IRecipe, IRecipeRange } from '../types/game';
+import { DIFFICULTY_LABELS } from '../data/difficulty';
+import type { Difficulty, IRecipe, IRecipeRange } from '../types/game';
 import { createElement } from './dom';
 import { formatNumber } from './format';
 import { createIcon } from './icons';
 
 export interface IRecipeViewState {
   recipe: IRecipe | null;
+  difficulty: Difficulty;
   added: number;
   capacity: number;
   tolerance: number;
@@ -69,7 +71,7 @@ export class RecipePanelView {
 
     if (!view.recipe) {
       this.name.textContent = 'No recipe yet';
-      this.tolerance.textContent = 'Start a game to get a random recipe.';
+      this.tolerance.textContent = `Difficulty: ${DIFFICULTY_LABELS[view.difficulty]}. Start a game to get a random recipe.`;
 
       for (const row of this.rows) {
         row.value.textContent = '—';
@@ -81,7 +83,7 @@ export class RecipePanelView {
     const { recipe } = view;
 
     this.name.textContent = recipe.name;
-    this.tolerance.textContent = `Brew tolerance: ±${String(view.tolerance)}`;
+    this.tolerance.textContent = `${DIFFICULTY_LABELS[view.difficulty]} · Brew tolerance: ±${String(view.tolerance)}`;
 
     for (const row of this.rows) {
       row.value.textContent = formatRange(recipe[row.config.parameter]);

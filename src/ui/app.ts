@@ -11,11 +11,12 @@ import {
   isCauldronFull,
   pauseGame,
   resumeGame,
+  selectDifficulty,
   startGame,
   updateTimeLeft,
 } from '../state/game-state';
 import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
-import type { IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
+import type { Difficulty, IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
 import { createButton, createElement } from './dom';
@@ -120,6 +121,9 @@ export class GameApp {
       this.pauseRun();
     });
     this.menu = new MenuView({
+      onSelectDifficulty: (difficulty: Difficulty): void => {
+        this.setState(selectDifficulty(this.state, difficulty));
+      },
       onNewGame: (): void => {
         this.startNewGame();
       },
@@ -309,6 +313,7 @@ export class GameApp {
 
     this.recipe.render({
       recipe: state.activeRecipe,
+      difficulty: state.difficulty,
       added: state.cauldronIngredients.length,
       capacity: settings.maxCauldronIngredients,
       tolerance: settings.tolerance,
