@@ -1,4 +1,4 @@
-import { isValidPlayerName, sortLeaderboard } from '../logic/leaderboard';
+import { isValidPlayerName, trimLeaderboard } from '../logic/leaderboard';
 import type { Difficulty, ILeaderboardEntry } from '../types/game';
 import { readJson, removeItem, writeJson } from './safe-storage';
 
@@ -31,10 +31,10 @@ export const loadLeaderboard = (): ILeaderboardEntry[] => {
     return [];
   }
 
-  return sortLeaderboard(data.filter((item: unknown) => isLeaderboardEntry(item)));
+  return trimLeaderboard(data.filter((item: unknown) => isLeaderboardEntry(item)));
 };
 
 export const saveLeaderboard = (entries: readonly ILeaderboardEntry[]): boolean =>
-  writeJson(LEADERBOARD_KEY, sortLeaderboard(entries));
+  writeJson(LEADERBOARD_KEY, trimLeaderboard(entries));
 
 export const clearLeaderboard = (): boolean => removeItem(LEADERBOARD_KEY);

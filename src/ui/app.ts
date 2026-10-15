@@ -233,7 +233,7 @@ export class GameApp {
       this.gameOver.show({
         score: next.score,
         reason: next.gameOverReason,
-        isTopScore: isTopScore(loadLeaderboard(), next.score),
+        isTopScore: isTopScore(loadLeaderboard(), next.score, next.difficulty),
       });
     }
   }
