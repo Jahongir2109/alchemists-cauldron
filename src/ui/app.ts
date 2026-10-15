@@ -10,12 +10,15 @@ import {
   getSettings,
   isCauldronFull,
   pauseGame,
+  restoreGame,
   resumeGame,
   selectDifficulty,
   startGame,
   updateTimeLeft,
 } from '../state/game-state';
 import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
+import { clearSave, loadGame, saveGame } from '../storage/save';
+import type { ISavedGame } from '../storage/save';
 import type { Difficulty, IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
@@ -32,7 +35,7 @@ import { RecipePanelView } from './recipe-panel';
 import { ShelfView } from './shelf';
 
 export class GameApp {
-  private state: IGameState = createMenuState();
+  private state: IGameState;
 
   private readonly timer: CountdownTimer = new CountdownTimer();
 
@@ -74,7 +77,15 @@ export class GameApp {
 
   private readonly brewButton: HTMLButtonElement;
 
+  private readonly continueButton: HTMLButtonElement;
+
+  private hasSave: boolean;
+
   public constructor(root: HTMLElement) {
+    const saved: ISavedGame | null = loadGame();
+
+    this.state = createMenuState(saved?.difficulty);
+    this.hasSave = saved !== null;
     this.hud = new HudView(this.layout.header);
     this.shelf = new ShelfView(this.layout.shelf, (id: string) => {
       this.handleAddIngredient(id);
@@ -107,7 +118,10 @@ export class GameApp {
     this.brewButton = createButton('Brew', 'button button--primary button--large', () => {
       this.handleBrew();
     });
-    this.layout.centerAction.append(this.startButton, this.brewButton);
+    this.continueButton = createButton('Continue Game', 'button button--large', () => {
+      this.continueGame();
+    });
+    this.layout.centerAction.append(this.startButton, this.continueButton, this.brewButton);
 
     this.pause = new PauseView({
       onResume: (): void => {
@@ -124,6 +138,9 @@ export class GameApp {
       onSelectDifficulty: (difficulty: Difficulty): void => {
         this.setState(selectDifficulty(this.state, difficulty));
       },
+      onContinue: (): void => {
+        this.continueGame();
+      },
       onNewGame: (): void => {
         this.startNewGame();
       },
@@ -132,7 +149,7 @@ export class GameApp {
       },
     });
     this.menuButton = createButton('Menu', 'button', () => {
-      this.menu.show(this.state.difficulty);
+      this.menu.show(this.state.difficulty, this.hasSave);
     });
     this.layout.controlsRight.append(this.pauseButton, this.menuButton);
 
@@ -147,6 +164,14 @@ export class GameApp {
       }
     });
 
+    // Reload or close: keep the exact remaining time in the save.
+    window.addEventListener('pagehide', () => {
+      if (this.state.status === 'playing') {
+        this.state = this.syncTime();
+        this.persist();
+      }
+    });
+
     root.replaceChildren(this.layout.root);
     this.render();
   }
@@ -158,6 +183,8 @@ export class GameApp {
 
   private exitToMenu(): void {
     this.closeDialogs();
+    clearSave();
+    this.hasSave = false;
     this.setState(createMenuState(this.state.difficulty));
   }
 
@@ -221,6 +248,36 @@ export class GameApp {
       : this.state;
   }
 
+  private continueGame(): void {
+    const saved: ISavedGame | null = loadGame();
+
+    this.closeDialogs();
+
+    if (!saved) {
+      this.hasSave = false;
+      this.render();
+
+      return;
+    }
+
+    this.setState(restoreGame(saved));
+    this.pause.show();
+  }
+
+  // Auto-save: every change of a running or paused game is saved, a finished game never is.
+  private persist(): void {
+    if (this.state.status === 'playing' || this.state.status === 'paused') {
+      this.hasSave = saveGame(this.state);
+
+      return;
+    }
+
+    if (this.state.status === 'game-over') {
+      clearSave();
+      this.hasSave = false;
+    }
+  }
+
   private setState(next: IGameState): void {
     if (next === this.state) {
       return;
@@ -230,6 +287,7 @@ export class GameApp {
 
     this.state = next;
     this.syncTimer();
+    this.persist();
     this.render();
 
     if (previous.status !== 'game-over' && next.status === 'game-over') {
@@ -328,6 +386,7 @@ export class GameApp {
     this.renderBrewMessage(settings);
 
     this.startButton.hidden = !isMenu;
+    this.continueButton.hidden = !isMenu || !this.hasSave;
     this.brewButton.hidden = isMenu;
     this.brewButton.disabled = !canBrew(state);
     this.pauseButton.hidden = state.status !== 'playing' && state.status !== 'paused';
