@@ -40,11 +40,19 @@ export const replayAnimation = (element: HTMLElement, className: string): void =
     }
   };
 
-  element.classList.remove(className);
-  // Reading the layout makes the browser start the animation from the beginning.
-  void element.offsetWidth;
-  element.classList.add(className);
   element.addEventListener('animationend', onEnd);
+
+  if (!element.classList.contains(className)) {
+    element.classList.add(className);
+
+    return;
+  }
+
+  // The class is still on: start its running CSS animations from the beginning.
+  for (const animation of element.getAnimations({ subtree: true })) {
+    animation.cancel();
+    animation.play();
+  }
 };
 
 export const createButton = (
