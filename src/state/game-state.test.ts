@@ -140,14 +140,14 @@ describe('game state', () => {
       throw new Error('Acid Spark recipe is missing');
     }
 
-    // Acid Spark 17..27 / 18..28 / 29..39 with tolerance 8: Fairy Dust + Caustic Acid = 22 / 23 / 34
+    // Acid Spark 17..27 / 18..28 / 29..39 with tolerance 8: Dragon Tears + Caustic Acid = 35 / 22 / 32
     let state: IGameState = {
-      ...startWithStock({ 'fairy-dust': 5, 'caustic-acid': 5 }),
+      ...startWithStock({ 'dragon-tears': 5, 'caustic-acid': 5 }),
       activeRecipe: acidSpark,
       timeLeft: 60_000,
     };
 
-    state = addIngredient(addIngredient(state, 'fairy-dust'), 'caustic-acid');
+    state = addIngredient(addIngredient(state, 'dragon-tears'), 'caustic-acid');
     state = brew(state, () => 0.5);
 
     expect(state.lastBrewResult).toBe('success');
@@ -155,7 +155,7 @@ describe('game state', () => {
     expect(state.timeLeft).toBe(70_000);
     expect(state.lives).toBe(3);
     expect(state.cauldronIngredients).toEqual([]);
-    expect(state.shelfStock).toEqual({ 'fairy-dust': 4, 'caustic-acid': 4 });
+    expect(state.shelfStock).toEqual({ 'dragon-tears': 4, 'caustic-acid': 4 });
     expect(state.activeRecipe?.difficulty).toBe('medium');
   });
 
@@ -165,12 +165,12 @@ describe('game state', () => {
     }
 
     let state: IGameState = {
-      ...startWithStock({ 'fairy-dust': 5, 'caustic-acid': 5 }),
+      ...startWithStock({ 'dragon-tears': 5, 'caustic-acid': 5 }),
       activeRecipe: acidSpark,
       timeLeft: 145_000,
     };
 
-    state = brew(addIngredient(addIngredient(state, 'fairy-dust'), 'caustic-acid'));
+    state = brew(addIngredient(addIngredient(state, 'dragon-tears'), 'caustic-acid'));
 
     expect(state.timeLeft).toBe(150_000);
   });
