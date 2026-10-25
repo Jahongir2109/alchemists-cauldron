@@ -50,6 +50,12 @@ const createTooltip = (ingredient: IIngredient): HTMLDivElement =>
 const placeTooltip = (item: HTMLElement, tooltip: HTMLElement): void => {
   const card: DOMRect = item.getBoundingClientRect();
   const box: DOMRect = tooltip.getBoundingClientRect();
+
+  // A hidden tooltip has no size, so keep the last placement until it shows.
+  if (box.width === 0) {
+    return;
+  }
+
   const { clientWidth, clientHeight } = document.documentElement;
   const isNearRightEdge: boolean = card.right + box.width + TOOLTIP_EDGE_GAP > clientWidth;
   const fitsLeft: boolean = card.left - box.width - TOOLTIP_EDGE_GAP >= 0;

@@ -106,8 +106,10 @@
   z-index: 20;
 }
 
+/* A hidden tooltip takes no space, so it never widens the page on narrow screens */
 .tooltip {
   position: absolute;
+  display: none;
   top: 0;
   left: calc(100% + var(--space-2));
   z-index: 30;
@@ -121,13 +123,12 @@
     0 10px 30px rgb(0 0 0 / 70%),
     0 0 14px rgb(125 255 79 / 20%);
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
   transform: translateY(4px);
   transition:
     opacity var(--duration-fast),
     transform var(--duration-fast),
-    visibility var(--duration-fast);
+    display var(--duration-fast) allow-discrete;
 }
 
 .tooltip--left {
@@ -158,13 +159,22 @@
 
 .shelf__item:hover .tooltip,
 .shelf__item:has(.ingredient:focus-visible) .tooltip {
+  display: block;
   opacity: 1;
-  visibility: visible;
   transform: none;
 }
 
+/* Fade in from the hidden look once display switches to block */
+@starting-style {
+  .shelf__item:hover .tooltip,
+  .shelf__item:has(.ingredient:focus-visible) .tooltip {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
 /* While paused every tooltip stays hidden */
-.game[data-status='paused'] .tooltip {
+.game[data-status='paused'] .shelf__item .tooltip {
   display: none;
 }
 
