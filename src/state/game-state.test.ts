@@ -8,6 +8,7 @@ import {
   createMenuState,
   finishIfOver,
   pauseGame,
+  pourOut,
   resumeGame,
   selectDifficulty,
   startGame,
@@ -87,6 +88,40 @@ describe('game state', () => {
     expect(selectDifficulty(pauseGame(running), 'hard').difficulty).toBe('easy');
   });
 
+  it('pours out the mixture for 10 seconds without losing a life', () => {
+    let state: IGameState = {
+      ...startWithStock({ 'toad-slime': 5 }),
+      score: 400,
+      timeLeft: 80_000,
+    };
+
+    state = addIngredient(addIngredient(state, 'toad-slime'), 'toad-slime');
+    state = pourOut(state);
+
+    expect(state.cauldronIngredients).toEqual([]);
+    expect(state.timeLeft).toBe(70_000);
+    expect(state.lives).toBe(3);
+    expect(state.score).toBe(400);
+    expect(state.shelfStock).toEqual({ 'toad-slime': 3 });
+  });
+
+  it('does nothing when the cauldron is empty or the game is paused', () => {
+    const empty: IGameState = startWithStock({ 'toad-slime': 5 });
+    const paused: IGameState = pauseGame(addIngredient(empty, 'toad-slime'));
+
+    expect(pourOut(empty)).toBe(empty);
+    expect(pourOut(paused)).toBe(paused);
+  });
+
+  it('ends the game when Pour Out uses the last seconds', () => {
+    let state: IGameState = { ...startWithStock({ 'toad-slime': 5 }), timeLeft: 6_000 };
+
+    state = pourOut(addIngredient(state, 'toad-slime'));
+
+    expect(state.status).toBe('game-over');
+    expect(state.gameOverReason).toBe('time');
+  });
+
   it('allows 5 ingredients in the cauldron on Hard', () => {
     let state: IGameState = { ...startGame('hard'), shelfStock: { 'toad-slime': 9 } };
 
@@ -140,14 +175,14 @@ describe('game state', () => {
       throw new Error('Acid Spark recipe is missing');
     }
 
-    // Acid Spark 17..27 / 18..28 / 29..39 with tolerance 8: Fairy Dust + Caustic Acid = 22 / 23 / 34
+    // Acid Spark 17..27 / 18..28 / 29..39 with tolerance 8: Dragon Tears + Caustic Acid = 35 / 22 / 32
     let state: IGameState = {
-      ...startWithStock({ 'fairy-dust': 5, 'caustic-acid': 5 }),
+      ...startWithStock({ 'dragon-tears': 5, 'caustic-acid': 5 }),
       activeRecipe: acidSpark,
       timeLeft: 60_000,
     };
 
-    state = addIngredient(addIngredient(state, 'fairy-dust'), 'caustic-acid');
+    state = addIngredient(addIngredient(state, 'dragon-tears'), 'caustic-acid');
     state = brew(state, () => 0.5);
 
     expect(state.lastBrewResult).toBe('success');
@@ -155,7 +190,7 @@ describe('game state', () => {
     expect(state.timeLeft).toBe(70_000);
     expect(state.lives).toBe(3);
     expect(state.cauldronIngredients).toEqual([]);
-    expect(state.shelfStock).toEqual({ 'fairy-dust': 4, 'caustic-acid': 4 });
+    expect(state.shelfStock).toEqual({ 'dragon-tears': 4, 'caustic-acid': 4 });
     expect(state.activeRecipe?.difficulty).toBe('medium');
   });
 
@@ -165,12 +200,12 @@ describe('game state', () => {
     }
 
     let state: IGameState = {
-      ...startWithStock({ 'fairy-dust': 5, 'caustic-acid': 5 }),
+      ...startWithStock({ 'dragon-tears': 5, 'caustic-acid': 5 }),
       activeRecipe: acidSpark,
       timeLeft: 145_000,
     };
 
-    state = brew(addIngredient(addIngredient(state, 'fairy-dust'), 'caustic-acid'));
+    state = brew(addIngredient(addIngredient(state, 'dragon-tears'), 'caustic-acid'));
 
     expect(state.timeLeft).toBe(150_000);
   });

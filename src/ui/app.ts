@@ -1,15 +1,19 @@
 import { getShelfIngredients } from '../data/ingredients';
-import { calculateCauldron } from '../logic/calculate-cauldron';
+import { findReaction } from '../data/reactions';
 import { addLeaderboardEntry, isTopScore, normalizePlayerName } from '../logic/leaderboard';
 import { CountdownTimer, secondsToMs } from '../logic/timer';
 import {
   addIngredient,
   brew,
   canBrew,
+  canPourOut,
   createMenuState,
+  getCauldronValues,
   getSettings,
   isCauldronFull,
   pauseGame,
+  POUR_OUT_PENALTY_SECONDS,
+  pourOut,
   restoreGame,
   resumeGame,
   selectDifficulty,
@@ -19,15 +23,25 @@ import {
 import { loadLeaderboard, saveLeaderboard } from '../storage/leaderboard';
 import { clearSave, loadGame, saveGame } from '../storage/save';
 import type { ISavedGame } from '../storage/save';
-import type { Difficulty, IDifficultySettings, IGameState, ILeaderboardEntry } from '../types/game';
+import type {
+  BrewResult,
+  Difficulty,
+  GameStatus,
+  IDifficultySettings,
+  IGameState,
+  IIngredient,
+  ILeaderboardEntry,
+  IReaction,
+} from '../types/game';
 import { BarsView } from './bars';
 import { CauldronView } from './cauldron';
-import { createButton, createElement } from './dom';
+import { createButton, createElement, replayAnimation } from './dom';
 import { GameOverView } from './game-over';
 import { HelpView } from './help';
 import { HudView } from './hud';
 import type { IGameLayout } from './layout';
 import { createGameLayout } from './layout';
+import { listenToShortcuts } from './keyboard';
 import { LeaderboardView } from './leaderboard';
 import { MenuView } from './menu';
 import { PauseView } from './pause';
@@ -79,6 +93,8 @@ export class GameApp {
 
   private readonly continueButton: HTMLButtonElement;
 
+  private readonly pourOutButton: HTMLButtonElement;
+
   private hasSave: boolean;
 
   public constructor(root: HTMLElement) {
@@ -90,7 +106,12 @@ export class GameApp {
     this.shelf = new ShelfView(this.layout.shelf, (id: string) => {
       this.handleAddIngredient(id);
     });
-    this.cauldron = new CauldronView(this.layout.cauldron);
+    this.cauldron = new CauldronView(this.layout.cauldron, {
+      canDrop: (): boolean => this.state.status === 'playing' && !isCauldronFull(this.state),
+      onDrop: (id: string): void => {
+        this.handleAddIngredient(id);
+      },
+    });
     this.recipe = new RecipePanelView(this.layout.recipe);
     this.bars = new BarsView(this.layout.bars);
     this.gameOver = new GameOverView({
@@ -121,7 +142,19 @@ export class GameApp {
     this.continueButton = createButton('Continue Game', 'button button--large', () => {
       this.continueGame();
     });
-    this.layout.centerAction.append(this.startButton, this.continueButton, this.brewButton);
+    this.pourOutButton = createButton(
+      `Pour Out (−${String(POUR_OUT_PENALTY_SECONDS)} s)`,
+      'button button--large button--secondary',
+      () => {
+        this.handlePourOut();
+      },
+    );
+    this.layout.centerAction.append(
+      this.startButton,
+      this.continueButton,
+      this.brewButton,
+      this.pourOutButton,
+    );
 
     this.pause = new PauseView({
       onResume: (): void => {
@@ -154,7 +187,7 @@ export class GameApp {
     this.layout.controlsRight.append(this.pauseButton, this.menuButton);
 
     this.helpButton = createButton('Help', 'button', () => {
-      this.help.show(getSettings(this.state));
+      this.help.show(this.state.difficulty);
     });
     this.layout.controlsLeft.append(this.helpButton);
 
@@ -163,6 +196,31 @@ export class GameApp {
         this.pauseRun();
       }
     });
+
+    listenToShortcuts({
+      getStatus: (): GameStatus => this.state.status,
+      onAddIngredient: (shelfIndex: number): void => {
+        const ingredient: IIngredient | undefined = getShelfIngredients(
+          getSettings(this.state).shelfSize,
+        )[shelfIndex];
+
+        if (ingredient) {
+          this.handleAddIngredient(ingredient.id);
+        }
+      },
+      onBrew: (): void => {
+        this.handleBrew();
+      },
+      onPourOut: (): void => {
+        this.handlePourOut();
+      },
+      onPause: (): void => {
+        this.pauseRun();
+      },
+    });
+    this.brewButton.setAttribute('aria-keyshortcuts', 'B');
+    this.pourOutButton.setAttribute('aria-keyshortcuts', 'O');
+    this.pauseButton.setAttribute('aria-keyshortcuts', 'P Escape');
 
     // Reload or close: keep the exact remaining time in the save.
     window.addEventListener('pagehide', () => {
@@ -238,7 +296,43 @@ export class GameApp {
       return;
     }
 
-    this.setState(brew(this.syncTime()));
+    const next: IGameState = brew(this.syncTime());
+
+    this.setState(next);
+
+    if (next.lastBrewResult) {
+      this.playBrewFeedback(next.lastBrewResult);
+    }
+  }
+
+  private playBrewFeedback(result: BrewResult): void {
+    this.cauldron.playEffect(result);
+
+    if (result === 'failure') {
+      replayAnimation(this.layout.root, 'is-shaking');
+
+      return;
+    }
+
+    // Optional floating "+10s"; it removes itself when its CSS animation ends.
+    const bonus: HTMLSpanElement = createElement('span', {
+      className: 'float-text',
+      text: `+${String(getSettings(this.state).timeBonusSeconds)}s`,
+      attributes: { 'aria-hidden': 'true' },
+    });
+
+    bonus.addEventListener('animationend', () => {
+      bonus.remove();
+    });
+    this.layout.cauldron.append(bonus);
+  }
+
+  private handlePourOut(): void {
+    if (this.state.status !== 'playing') {
+      return;
+    }
+
+    this.setState(pourOut(this.syncTime()));
   }
 
   // Copies the timestamp-based remaining time into the state before an action changes it.
@@ -378,7 +472,7 @@ export class GameApp {
     });
 
     this.bars.render({
-      values: calculateCauldron(state.cauldronIngredients),
+      values: getCauldronValues(state),
       recipe: state.activeRecipe,
       tolerance: settings.tolerance,
     });
@@ -389,6 +483,8 @@ export class GameApp {
     this.continueButton.hidden = !isMenu || !this.hasSave;
     this.brewButton.hidden = isMenu;
     this.brewButton.disabled = !canBrew(state);
+    this.pourOutButton.hidden = isMenu;
+    this.pourOutButton.disabled = !canPourOut(state);
     this.pauseButton.hidden = state.status !== 'playing' && state.status !== 'paused';
     this.pauseButton.disabled = state.status !== 'playing';
     this.menuButton.hidden = !isMenu;
@@ -410,6 +506,15 @@ export class GameApp {
     if (result === 'failure') {
       this.brewMessage.classList.add('brew-message--failure');
       this.brewMessage.textContent = 'Wrong mixture! You lost 1 life.';
+
+      return;
+    }
+
+    const reaction: IReaction | undefined = findReaction(this.state.lastReactionId ?? '');
+
+    if (reaction) {
+      this.brewMessage.classList.add('brew-message--reaction');
+      this.brewMessage.textContent = `Reaction: ${reaction.name}! ${reaction.description}`;
 
       return;
     }

@@ -28,14 +28,11 @@
   position: relative;
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
-  grid-template-areas:
-    'icon name'
-    'icon stats';
+  grid-template-areas: 'icon name';
   align-items: center;
   column-gap: var(--space-2);
-  row-gap: var(--space-1);
   width: 100%;
-  min-height: 72px;
+  min-height: 64px;
   padding: var(--space-2) 36px var(--space-2) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -58,6 +55,15 @@
   transform: translateY(1px);
 }
 
+.ingredient[draggable='true'] {
+  cursor: grab;
+}
+
+.ingredient.is-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
 .ingredient:disabled {
   opacity: 0.65;
 }
@@ -69,6 +75,17 @@
   height: 48px;
 }
 
+.ingredient__key {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-muted);
+}
+
 .ingredient__name {
   grid-area: name;
   font-family: var(--font-display);
@@ -78,31 +95,120 @@
   color: var(--color-gold);
 }
 
-.ingredient__stats {
+/* Tooltip with the ingredient numbers (Level 3) */
+
+.shelf__item {
+  position: relative;
+}
+
+.shelf__item:hover,
+.shelf__item:focus-within {
+  z-index: 20;
+}
+
+/* A hidden tooltip takes no space, so it never widens the page on narrow screens */
+.tooltip {
+  position: absolute;
+  display: none;
+  top: 0;
+  left: calc(100% + var(--space-2));
+  z-index: 30;
+  width: max-content;
+  min-width: 190px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  background: #0d120a;
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 70%),
+    0 0 14px rgb(125 255 79 / 20%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity var(--duration-fast),
+    transform var(--duration-fast),
+    display var(--duration-fast) allow-discrete;
+}
+
+.tooltip--left {
+  right: calc(100% + var(--space-2));
+  left: auto;
+}
+
+.tooltip--up {
+  top: auto;
+  bottom: 0;
+}
+
+.tooltip--stacked {
+  top: calc(100% + var(--space-1));
+  left: 0;
+  min-width: min(190px, 100%);
+}
+
+.tooltip--stacked.tooltip--left {
+  right: 0;
+  left: auto;
+}
+
+.tooltip--stacked.tooltip--up {
+  top: auto;
+  bottom: calc(100% + var(--space-1));
+}
+
+.shelf__item:hover .tooltip,
+.shelf__item:has(.ingredient:focus-visible) .tooltip {
+  display: block;
+  opacity: 1;
+  transform: none;
+}
+
+/* Fade in from the hidden look once display switches to block */
+@starting-style {
+  .shelf__item:hover .tooltip,
+  .shelf__item:has(.ingredient:focus-visible) .tooltip {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* While paused every tooltip stays hidden */
+.game[data-status='paused'] .shelf__item .tooltip {
+  display: none;
+}
+
+.tooltip__title {
+  margin-bottom: var(--space-1);
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+.tooltip__row {
   display: flex;
-  flex-wrap: wrap;
-  grid-area: stats;
-  gap: var(--space-1);
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: 0.9rem;
 }
 
-.stat {
-  padding: 0 5px;
-  border: 1px solid currentcolor;
-  border-radius: var(--radius-small);
-  font-size: 0.75rem;
+.tooltip__value {
   font-weight: 700;
-  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
 }
 
-.stat--temperature {
+.tooltip__row--temperature .tooltip__label,
+.tooltip__row--temperature .tooltip__value {
   color: var(--color-temperature);
 }
 
-.stat--density {
+.tooltip__row--density .tooltip__label,
+.tooltip__row--density .tooltip__value {
   color: var(--color-density);
 }
 
-.stat--magic {
+.tooltip__row--magic .tooltip__label,
+.tooltip__row--magic .tooltip__value {
   color: var(--color-magic);
 }
 

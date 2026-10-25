@@ -13,7 +13,6 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  overflow-x: hidden;
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.4;
@@ -123,6 +122,11 @@ button:disabled {
   padding: var(--space-3) var(--space-6);
   font-family: var(--font-display);
   font-size: 1.5rem;
+}
+
+.button--large.button--secondary {
+  min-width: 0;
+  font-size: 1.1rem;
 }
 
 .button--danger {
